@@ -8,6 +8,11 @@ import type { TypingSignaler } from "./typing-mode.js";
 import { resolveAgentModelFallbacksOverride } from "../../agents/agent-scope.js";
 import { runCliAgent } from "../../agents/cli-runner.js";
 import { getCliSessionId } from "../../agents/cli-session.js";
+import {
+  checkContextThresholds,
+  resetContextThresholdState,
+  type ContextThresholdState,
+} from "../../agents/context-thresholds.js";
 import { runWithModelFallback } from "../../agents/model-fallback.js";
 import { isCliProvider } from "../../agents/model-selection.js";
 import {
@@ -77,6 +82,8 @@ export async function runAgentTurnWithFallback(params: {
   activeSessionStore?: Record<string, SessionEntry>;
   storePath?: string;
   resolvedVerboseLevel: VerboseLevel;
+  contextThresholdState?: ContextThresholdState;
+  contextWindowTokens?: number;
 }): Promise<AgentRunLoopResult> {
   let didLogHeartbeatStrip = false;
   let autoCompactionCompleted = false;
@@ -326,6 +333,10 @@ export async function runAgentTurnWithFallback(params: {
                 const willRetry = Boolean(evt.data.willRetry);
                 if (phase === "end" && !willRetry) {
                   autoCompactionCompleted = true;
+                  // Reset context threshold warnings after successful compaction
+                  if (params.contextThresholdState) {
+                    resetContextThresholdState(params.contextThresholdState);
+                  }
                 }
               }
             },
@@ -469,6 +480,20 @@ export async function runAgentTurnWithFallback(params: {
               text: "⚠️ Message ordering conflict. I've reset the conversation - please try again.",
             },
           };
+        }
+      }
+
+      // Check context thresholds after successful run
+      if (params.contextThresholdState && params.contextWindowTokens) {
+        const entry = params.getActiveSessionEntry();
+        if (entry?.totalTokens && entry.totalTokens > 0) {
+          checkContextThresholds({
+            totalTokens: entry.totalTokens,
+            contextWindowTokens: params.contextWindowTokens,
+            state: params.contextThresholdState,
+            runId,
+            sessionKey: params.sessionKey,
+          });
         }
       }
 
