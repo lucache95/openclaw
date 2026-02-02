@@ -6,6 +6,11 @@
  */
 
 import {
+  generateWithMinimax,
+  isMinimaxAvailable,
+  type MinimaxGenerateResult,
+} from "./minimax-client.js";
+import {
   generateWithOllama,
   isOllamaAvailable,
   type OllamaGenerateResult,
@@ -13,9 +18,22 @@ import {
 
 export type RoutingDestination = "local" | "cloud";
 
+export type RoutingTier = "local" | "cheap" | "quality";
+
 export interface RoutingDecision {
   /** Where the task should be routed */
   destination: RoutingDestination;
+  /** Human-readable reason for the routing decision */
+  reason: string;
+  /** Length of the prompt in characters */
+  promptLength: number;
+  /** Confidence level of the classification */
+  confidence: "high" | "medium" | "low";
+}
+
+export interface ThreeTierDecision {
+  /** Which tier the task should be routed to */
+  tier: RoutingTier;
   /** Human-readable reason for the routing decision */
   reason: string;
   /** Length of the prompt in characters */
@@ -40,6 +58,17 @@ export interface RouteResult {
   response?: string;
   /** Duration in milliseconds (only present if response generated) */
   durationMs?: number;
+}
+
+export interface ThreeTierRouteResult {
+  /** The routing decision made */
+  decision: ThreeTierDecision;
+  /** Generated response (only present if handled locally or by cheap tier) */
+  response?: string;
+  /** Duration in milliseconds (only present if response generated) */
+  durationMs?: number;
+  /** May differ from decision.tier if fallback occurred */
+  actualTier?: RoutingTier;
 }
 
 /**
@@ -94,6 +123,29 @@ export const COMPLEX_INDICATORS = [
   "optimize",
   "improve",
 ];
+
+/**
+ * Patterns that indicate medium-complexity tasks suitable for cheap tier (MiniMax)
+ */
+export const MEDIUM_INDICATORS = new Set([
+  "summarize multiple",
+  "summarize these",
+  "compare these",
+  "compare the",
+  "analyze this",
+  "analyze the",
+  "explain this",
+  "explain the",
+  "review this",
+  "review the",
+  "what does this mean",
+  "describe the",
+  "outline the",
+  "list the differences",
+  "break down",
+  "walk me through",
+  "give me an overview",
+]);
 
 /**
  * Classify a task based on prompt characteristics
@@ -165,6 +217,89 @@ export function classifyTask(prompt: string, maxLocalPromptLength: number = 500)
     reason: "Long prompt without simple task indicators",
     promptLength,
     confidence: "medium",
+  };
+}
+
+/**
+ * Classify a task into three tiers: local, cheap (MiniMax), or quality (Claude)
+ *
+ * Routing priority:
+ * 1. Complex indicators -> quality tier
+ * 2. Simple keywords with short prompt -> local tier
+ * 3. Medium indicators -> cheap tier
+ * 4. Length-based defaults (short->local, medium->cheap, long->quality)
+ *
+ * @param prompt - The user prompt to classify
+ * @param maxLocalPromptLength - Maximum length for local routing (default: 500)
+ * @returns Three-tier decision with tier, reason, and confidence
+ */
+export function classifyTaskThreeTier(
+  prompt: string,
+  maxLocalPromptLength: number = 500,
+): ThreeTierDecision {
+  const normalizedPrompt = prompt.toLowerCase().trim();
+  const promptLength = prompt.length;
+
+  // First check for complex indicators -> quality tier
+  for (const indicator of COMPLEX_INDICATORS) {
+    if (normalizedPrompt.includes(indicator)) {
+      return {
+        tier: "quality",
+        reason: `Complex task: "${indicator}"`,
+        promptLength,
+        confidence: "high",
+      };
+    }
+  }
+
+  // Check for simple keywords with short prompt -> local tier
+  for (const keyword of SIMPLE_KEYWORDS) {
+    if (normalizedPrompt.includes(keyword) && promptLength <= maxLocalPromptLength) {
+      return {
+        tier: "local",
+        reason: `Simple task with keyword: "${keyword}"`,
+        promptLength,
+        confidence: "high",
+      };
+    }
+  }
+
+  // Check for medium indicators -> cheap tier
+  for (const indicator of MEDIUM_INDICATORS) {
+    if (normalizedPrompt.includes(indicator)) {
+      return {
+        tier: "cheap",
+        reason: `Medium complexity: "${indicator}"`,
+        promptLength,
+        confidence: "medium",
+      };
+    }
+  }
+
+  // Length-based defaults
+  if (promptLength <= 300) {
+    return {
+      tier: "local",
+      reason: "Short prompt",
+      promptLength,
+      confidence: "medium",
+    };
+  }
+  if (promptLength <= 2000) {
+    return {
+      tier: "cheap",
+      reason: "Medium-length prompt",
+      promptLength,
+      confidence: "low",
+    };
+  }
+
+  // Long prompts default to quality
+  return {
+    tier: "quality",
+    reason: "Long/complex prompt",
+    promptLength,
+    confidence: "low",
   };
 }
 
@@ -268,5 +403,72 @@ export class TaskRouter {
    */
   async isLocalAvailable(): Promise<boolean> {
     return isOllamaAvailable(this.ollamaUrl);
+  }
+
+  /**
+   * Route a prompt using three-tier classification (local/cheap/quality)
+   *
+   * Tries tiers in order with fallback:
+   * - local tier: Try Ollama, fall through to cheap if unavailable/fails
+   * - cheap tier: Try MiniMax, fall through to quality if unavailable/fails
+   * - quality tier: Return decision only (caller handles Claude)
+   *
+   * @param prompt - The user prompt to route
+   * @returns Three-tier route result with decision and optional response
+   */
+  async routeThreeTier(prompt: string): Promise<ThreeTierRouteResult> {
+    const decision = classifyTaskThreeTier(prompt, this.maxLocalPromptLength);
+
+    if (this.debug) {
+      console.log(`[TaskRouter] Three-tier decision: ${decision.tier}`);
+      console.log(`[TaskRouter] Reason: ${decision.reason}`);
+    }
+
+    // Try local tier first
+    if (decision.tier === "local") {
+      const ollamaAvailable = await isOllamaAvailable(this.ollamaUrl);
+      if (ollamaAvailable) {
+        try {
+          const result = await generateWithOllama({ prompt }, this.ollamaUrl);
+          return {
+            decision,
+            response: result.response,
+            durationMs: result.durationMs,
+            actualTier: "local",
+          };
+        } catch (error) {
+          if (this.debug) {
+            console.log(`[TaskRouter] Local generation failed, trying cheap tier`);
+          }
+        }
+      }
+      // Fall through to cheap tier
+    }
+
+    // Try cheap tier (MiniMax)
+    if (decision.tier === "local" || decision.tier === "cheap") {
+      const minimaxAvailable = await isMinimaxAvailable();
+      if (minimaxAvailable) {
+        try {
+          const result = await generateWithMinimax({ prompt });
+          return {
+            decision,
+            response: result.response,
+            durationMs: result.durationMs,
+            actualTier: "cheap",
+          };
+        } catch (error) {
+          if (this.debug) {
+            console.log(`[TaskRouter] Cheap generation failed, falling back to quality`);
+          }
+        }
+      }
+    }
+
+    // Quality tier - return decision only, caller handles Claude
+    return {
+      decision,
+      actualTier: "quality",
+    };
   }
 }
