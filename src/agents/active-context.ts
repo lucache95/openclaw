@@ -83,12 +83,17 @@ export function parseActiveContext(content: string): ActiveContextData {
     const trimmed = line.trim();
 
     // Check for section headers
+    let isHeader = false;
     for (const [key, header] of Object.entries(ACTIVE_CONTEXT_SECTIONS)) {
       if (trimmed === header) {
         currentSection = key as keyof typeof ACTIVE_CONTEXT_SECTIONS;
         sectionContent[key] = [];
+        isHeader = true;
         break;
       }
+    }
+    if (isHeader) {
+      continue;
     }
 
     // Check for footer
