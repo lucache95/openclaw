@@ -20,7 +20,16 @@ import {
 import { type DelegationBrief, formatDelegationBriefForPrompt } from "./delegation-brief.js";
 import { isEmbeddedPiRunActive, queueEmbeddedPiMessage } from "./pi-embedded.js";
 import { type AnnounceQueueItem, enqueueAnnounce } from "./subagent-announce-queue.js";
+import {
+  formatResultForAnnounce,
+  getResultFormatInstructions,
+  inferResultFromFreeform,
+  parseSubagentResult,
+  type SubagentResult,
+} from "./subagent-result.js";
 import { readLatestAssistantReply } from "./tools/agent-step.js";
+
+export type { SubagentResult } from "./subagent-result.js";
 
 function formatDurationShort(valueMs?: number) {
   if (!valueMs || !Number.isFinite(valueMs) || valueMs <= 0) {
@@ -308,6 +317,18 @@ export function buildSubagentSystemPrompt(params: {
   if (params.delegationBrief) {
     lines.push(formatDelegationBriefForPrompt(params.delegationBrief));
     lines.push("");
+
+    // Add structured output format instructions if required sections specified
+    if (
+      params.delegationBrief.outputFormat?.requiredSections &&
+      params.delegationBrief.outputFormat.requiredSections.length > 0
+    ) {
+      const formatInstructions = getResultFormatInstructions(
+        params.delegationBrief.outputFormat.requiredSections,
+      );
+      lines.push(formatInstructions);
+      lines.push("");
+    }
   } else {
     // Fall back to existing behavior with task description
     const taskText =
@@ -433,6 +454,21 @@ export async function runSubagentAnnounceFlow(params: {
       outcome = { status: "unknown" };
     }
 
+    // Parse structured result from reply - try structured markers first, fall back to inference
+    const structuredResult: SubagentResult =
+      parseSubagentResult(reply ?? "") ?? inferResultFromFreeform(reply ?? "");
+
+    // Enrich metadata from existing tracking
+    structuredResult.metadata = {
+      ...structuredResult.metadata,
+      durationMs:
+        params.endedAt && params.startedAt
+          ? Math.max(0, params.endedAt - params.startedAt)
+          : undefined,
+      sessionKey: params.childSessionKey,
+      runId: params.childRunId,
+    };
+
     // Build stats
     const statsLine = await buildSubagentStatsLine({
       sessionKey: params.childSessionKey,
@@ -450,13 +486,16 @@ export async function runSubagentAnnounceFlow(params: {
             ? `failed: ${outcome.error || "unknown error"}`
             : "finished with unknown status";
 
+    // Format the structured result for announcement
+    const formattedResult = formatResultForAnnounce(structuredResult);
+
     // Build instructional message for main agent
     const taskLabel = params.label || params.task || "background task";
     const triggerMessage = [
       `A background task "${taskLabel}" just ${statusLabel}.`,
       "",
       "Findings:",
-      reply || "(no output)",
+      formattedResult || "(no output)",
       "",
       statsLine,
       "",
