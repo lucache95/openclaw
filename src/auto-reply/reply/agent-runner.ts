@@ -4,6 +4,7 @@ import type { TypingMode } from "../../config/types.js";
 import type { OriginatingChannelType, TemplateContext } from "../templating.js";
 import type { GetReplyOptions, ReplyPayload } from "../types.js";
 import type { TypingController } from "./typing.js";
+import { createContextThresholdState } from "../../agents/context-thresholds.js";
 import { lookupContextTokens } from "../../agents/context.js";
 import { DEFAULT_CONTEXT_TOKENS } from "../../agents/defaults.js";
 import { resolveModelAuthMode } from "../../agents/model-auth.js";
@@ -104,6 +105,13 @@ export async function runReplyAgent(params: {
   let activeSessionEntry = sessionEntry;
   const activeSessionStore = sessionStore;
   let activeIsNewSession = isNewSession;
+
+  // Create threshold state once per session for context monitoring
+  const contextThresholdState = createContextThresholdState();
+
+  // Resolve context window size for threshold monitoring
+  const contextWindowTokens =
+    agentCfgContextTokens ?? activeSessionEntry?.contextTokens ?? DEFAULT_CONTEXT_TOKENS;
 
   const isHeartbeat = opts?.isHeartbeat === true;
   const typingSignals = createTypingSignaler({
@@ -328,6 +336,8 @@ export async function runReplyAgent(params: {
       activeSessionStore,
       storePath,
       resolvedVerboseLevel,
+      contextThresholdState,
+      contextWindowTokens,
     });
 
     if (runOutcome.kind === "final") {
