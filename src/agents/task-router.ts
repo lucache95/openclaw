@@ -5,11 +5,7 @@
  * (for complex tasks) based on prompt characteristics.
  */
 
-import {
-  generateWithMinimax,
-  isMinimaxAvailable,
-  type MinimaxGenerateResult,
-} from "./minimax-client.js";
+import { generateWithMinimax, isMinimaxAvailable } from "./minimax-client.js";
 import {
   generateWithOllama,
   isOllamaAvailable,
@@ -436,9 +432,9 @@ export class TaskRouter {
             durationMs: result.durationMs,
             actualTier: "local",
           };
-        } catch (error) {
+        } catch {
           if (this.debug) {
-            console.log(`[TaskRouter] Local generation failed, trying cheap tier`);
+            console.log("[TaskRouter] Local generation failed, trying cheap tier");
           }
         }
       }
@@ -457,9 +453,9 @@ export class TaskRouter {
             durationMs: result.durationMs,
             actualTier: "cheap",
           };
-        } catch (error) {
+        } catch {
           if (this.debug) {
-            console.log(`[TaskRouter] Cheap generation failed, falling back to quality`);
+            console.log("[TaskRouter] Cheap generation failed, falling back to quality");
           }
         }
       }
