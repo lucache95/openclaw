@@ -40,6 +40,7 @@ import { stripHeartbeatToken } from "../heartbeat.js";
 import { isSilentReplyText, SILENT_REPLY_TOKEN } from "../tokens.js";
 import { buildThreadingToolContext, resolveEnforceFinalTag } from "./agent-runner-utils.js";
 import { createBlockReplyPayloadKey, type BlockReplyPipeline } from "./block-reply-pipeline.js";
+import { tryLocalRouting, LOCAL_ROUTING_ENABLED } from "./local-routing.js";
 import { parseReplyDirectives } from "./reply-directives.js";
 import { applyReplyTagsToPayload, isRenderablePayload } from "./reply-payloads.js";
 
@@ -85,6 +86,28 @@ export async function runAgentTurnWithFallback(params: {
   contextThresholdState?: ContextThresholdState;
   contextWindowTokens?: number;
 }): Promise<AgentRunLoopResult> {
+  // Try local routing for simple tasks
+  if (LOCAL_ROUTING_ENABLED && !params.isHeartbeat) {
+    const localResult = await tryLocalRouting({
+      prompt: params.commandBody,
+      debug: params.resolvedVerboseLevel !== "off",
+    });
+
+    if (localResult.handled && localResult.response) {
+      logVerbose(`[local-routing] Handled locally: ${localResult.reason}`);
+      return {
+        kind: "final",
+        payload: {
+          text: localResult.response,
+        },
+      };
+    }
+
+    if (localResult.reason) {
+      logVerbose(`[local-routing] Routing to cloud: ${localResult.reason}`);
+    }
+  }
+
   let didLogHeartbeatStrip = false;
   let autoCompactionCompleted = false;
   // Track payloads sent directly (not via pipeline) during tool flush to avoid duplicates.
