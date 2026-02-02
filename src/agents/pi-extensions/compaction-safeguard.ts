@@ -198,6 +198,37 @@ async function loadActiveContextSafe(sessionManager: unknown): Promise<ActiveCon
   }
 }
 
+async function updateActiveContextWorkingFiles(params: {
+  sessionManager: unknown;
+  modifiedFiles: string[];
+  existingContext: ActiveContextData | null;
+}): Promise<void> {
+  try {
+    const manager = params.sessionManager as { workspaceDir?: string };
+    if (!manager.workspaceDir) {
+      return;
+    }
+
+    const existingContext = params.existingContext ?? {};
+
+    // Merge working files with existing context
+    const updatedWorkingFiles = [
+      ...new Set([...(existingContext.workingFiles ?? []), ...params.modifiedFiles]),
+    ].slice(0, 20); // Limit to prevent bloat
+
+    await writeActiveContext({
+      workspaceDir: manager.workspaceDir,
+      data: {
+        ...existingContext,
+        workingFiles: updatedWorkingFiles,
+        compactionCount: (existingContext.compactionCount ?? 0) + 1,
+      },
+    });
+  } catch {
+    // Ignore errors - ACTIVE.md update is best-effort
+  }
+}
+
 export default function compactionSafeguardExtension(api: ExtensionAPI): void {
   api.on("session_before_compact", async (event, ctx) => {
     const { preparation, customInstructions, signal } = event;
@@ -222,6 +253,12 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
 
     const model = ctx.model;
     if (!model) {
+      // Update ACTIVE.md with working files before returning
+      await updateActiveContextWorkingFiles({
+        sessionManager: ctx.sessionManager,
+        modifiedFiles,
+        existingContext: activeContext,
+      });
       return {
         compaction: {
           summary: fallbackSummary,
@@ -234,6 +271,12 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
 
     const apiKey = await ctx.modelRegistry.getApiKey(model);
     if (!apiKey) {
+      // Update ACTIVE.md with working files before returning
+      await updateActiveContextWorkingFiles({
+        sessionManager: ctx.sessionManager,
+        modifiedFiles,
+        existingContext: activeContext,
+      });
       return {
         compaction: {
           summary: fallbackSummary,
@@ -360,6 +403,13 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
       summary += fileOpsSummary;
       summary += activeContextSummary;
 
+      // Update ACTIVE.md with working files before returning
+      await updateActiveContextWorkingFiles({
+        sessionManager: ctx.sessionManager,
+        modifiedFiles,
+        existingContext: activeContext,
+      });
+
       return {
         compaction: {
           summary,
@@ -374,6 +424,12 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
           error instanceof Error ? error.message : String(error)
         }`,
       );
+      // Update ACTIVE.md with working files before returning
+      await updateActiveContextWorkingFiles({
+        sessionManager: ctx.sessionManager,
+        modifiedFiles,
+        existingContext: activeContext,
+      });
       return {
         compaction: {
           summary: fallbackSummary,
