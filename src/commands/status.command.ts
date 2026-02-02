@@ -1,3 +1,4 @@
+import type { ContextWarningLevel } from "../agents/context-thresholds.js";
 import type { RuntimeEnv } from "../runtime.js";
 import { formatCliCommand } from "../cli/command-format.js";
 import { withProgress } from "../cli/progress.js";
@@ -170,6 +171,19 @@ export async function statusCommand(
   const muted = (value: string) => (rich ? theme.muted(value) : value);
   const ok = (value: string) => (rich ? theme.success(value) : value);
   const warn = (value: string) => (rich ? theme.warn(value) : value);
+
+  // Colorize callback for context usage warning levels
+  const colorizeWarningLevel = (level: ContextWarningLevel, text: string) => {
+    if (!rich) return text;
+    switch (level) {
+      case "yellow":
+        return theme.warn(text);
+      case "orange":
+        return theme.warn(text);
+      case "red":
+        return theme.error(text);
+    }
+  };
 
   if (opts.verbose) {
     const details = buildGatewayConnectionDetails();
@@ -504,7 +518,7 @@ export async function statusCommand(
               Kind: sess.kind,
               Age: sess.updatedAt ? formatAge(sess.age) : "no activity",
               Model: sess.model ?? "unknown",
-              Tokens: formatTokensCompact(sess),
+              Tokens: formatTokensCompact(sess, colorizeWarningLevel),
             }))
           : [
               {
