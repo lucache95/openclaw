@@ -3,8 +3,12 @@
  *
  * Thin adapter layer that integrates TaskRouter into the agent execution pipeline.
  * Routes simple tasks to Ollama when available, with graceful fallback to cloud.
+ * Injects agent identity (IDENTITY.md, SOUL.md) into all tiers for consistent persona.
  */
 
+import { readFileSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 import { globalCostTracker } from "../../agents/cost-tracker.js";
 import {
   TaskRouter,
@@ -14,10 +18,39 @@ import {
 } from "../../agents/task-router.js";
 
 /**
+ * Load agent identity from workspace files (IDENTITY.md, SOUL.md)
+ * Returns a combined system prompt for consistent persona across all tiers
+ */
+function loadAgentIdentity(): string | undefined {
+  const workspaceDir = join(homedir(), "clawd");
+  const parts: string[] = [];
+
+  try {
+    const identity = readFileSync(join(workspaceDir, "IDENTITY.md"), "utf8");
+    parts.push(identity.trim());
+  } catch {
+    // IDENTITY.md not found, continue
+  }
+
+  try {
+    const soul = readFileSync(join(workspaceDir, "SOUL.md"), "utf8");
+    parts.push(soul.trim());
+  } catch {
+    // SOUL.md not found, continue
+  }
+
+  if (parts.length === 0) {
+    return undefined;
+  }
+
+  return parts.join("\n\n---\n\n");
+}
+
+/**
  * Feature flag to enable/disable local routing
  * Can be overridden via config in future
  */
-export let LOCAL_ROUTING_ENABLED = true;
+export let LOCAL_ROUTING_ENABLED = false;
 
 /**
  * Debug flag for local routing
@@ -77,8 +110,10 @@ export interface TryLocalRoutingParams {
 export async function tryThreeTierRouting(
   params: TryLocalRoutingParams,
 ): Promise<LocalRoutingResult> {
+  const systemPrompt = loadAgentIdentity();
   const router = new TaskRouter({
     debug: params.debug ?? LOCAL_ROUTING_DEBUG,
+    systemPrompt,
   });
 
   try {
@@ -136,8 +171,10 @@ export async function tryLocalRouting(params: TryLocalRoutingParams): Promise<Lo
   }
 
   // Otherwise, use existing two-tier logic for backward compatibility
+  const systemPrompt = loadAgentIdentity();
   const router = new TaskRouter({
     debug: params.debug ?? LOCAL_ROUTING_DEBUG,
+    systemPrompt,
   });
 
   try {

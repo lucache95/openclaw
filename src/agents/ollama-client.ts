@@ -13,6 +13,8 @@ const DEFAULT_TIMEOUT_MS = 30000;
 export interface OllamaGenerateOptions {
   /** The prompt to generate from */
   prompt: string;
+  /** System prompt for agent identity (optional) */
+  system?: string;
   /** Model to use (default: qwen2.5:3b) */
   model?: string;
   /** Whether to stream the response (default: false) */
@@ -118,6 +120,7 @@ export async function generateWithOllama(
       model,
       prompt: options.prompt,
       stream: false,
+      ...(options.system && { system: options.system }),
       options: {
         num_ctx: options.options?.num_ctx ?? DEFAULT_NUM_CTX,
         ...(options.options?.temperature !== undefined && {
@@ -189,6 +192,7 @@ export async function generateWithOllamaStream(
       model,
       prompt: options.prompt,
       stream: true,
+      ...(options.system && { system: options.system }),
       options: {
         num_ctx: options.options?.num_ctx ?? DEFAULT_NUM_CTX,
         ...(options.options?.temperature !== undefined && {

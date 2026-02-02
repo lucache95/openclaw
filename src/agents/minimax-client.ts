@@ -14,6 +14,8 @@ const DEFAULT_TIMEOUT_MS = 60000;
 export interface MinimaxGenerateOptions {
   /** The prompt to generate from */
   prompt: string;
+  /** System prompt for agent identity (optional) */
+  system?: string;
   /** Model to use (default: minimax-m2) */
   model?: string;
   /** Temperature for generation (0.01-1.0, MiniMax rejects 0) */
@@ -149,9 +151,15 @@ export async function generateWithMinimax(
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
   try {
+    const messages: Array<{ role: string; content: string }> = [];
+    if (options.system) {
+      messages.push({ role: "system", content: options.system });
+    }
+    messages.push({ role: "user", content: options.prompt });
+
     const requestBody = {
       model,
-      messages: [{ role: "user", content: options.prompt }],
+      messages,
       temperature: clampTemperature(options.temperature),
       ...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
     };
