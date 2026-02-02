@@ -189,7 +189,9 @@ export async function generateWithMinimax(
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`MiniMax generation timed out after ${DEFAULT_TIMEOUT_MS}ms`);
+      throw new Error(`MiniMax generation timed out after ${DEFAULT_TIMEOUT_MS}ms`, {
+        cause: error,
+      });
     }
 
     throw error;
