@@ -11,6 +11,14 @@ vi.mock("../agents/model-auth.js", () => ({
   },
 }));
 
+// Mock Ollama module to avoid interference from locally running Ollama
+vi.mock("./embeddings-ollama.js", () => ({
+  checkOllamaHealth: vi.fn().mockResolvedValue(false),
+  checkOllamaModel: vi.fn().mockResolvedValue(false),
+  createOllamaEmbeddingProvider: vi.fn(),
+  DEFAULT_OLLAMA_EMBEDDING_MODEL: "nomic-embed-text",
+}));
+
 const createFetchMock = () =>
   vi.fn(async () => ({
     ok: true,

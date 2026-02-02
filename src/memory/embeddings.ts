@@ -3,10 +3,18 @@ import fsSync from "node:fs";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveUserPath } from "../utils.js";
 import { createGeminiEmbeddingProvider, type GeminiEmbeddingClient } from "./embeddings-gemini.js";
+import {
+  checkOllamaHealth,
+  checkOllamaModel,
+  createOllamaEmbeddingProvider,
+  DEFAULT_OLLAMA_EMBEDDING_MODEL,
+  type OllamaEmbeddingClient,
+} from "./embeddings-ollama.js";
 import { createOpenAiEmbeddingProvider, type OpenAiEmbeddingClient } from "./embeddings-openai.js";
 import { importNodeLlamaCpp } from "./node-llama.js";
 
 export type { GeminiEmbeddingClient } from "./embeddings-gemini.js";
+export type { OllamaEmbeddingClient } from "./embeddings-ollama.js";
 export type { OpenAiEmbeddingClient } from "./embeddings-openai.js";
 
 export type EmbeddingProvider = {
@@ -18,24 +26,25 @@ export type EmbeddingProvider = {
 
 export type EmbeddingProviderResult = {
   provider: EmbeddingProvider;
-  requestedProvider: "openai" | "local" | "gemini" | "auto";
-  fallbackFrom?: "openai" | "local" | "gemini";
+  requestedProvider: "openai" | "local" | "gemini" | "ollama" | "auto";
+  fallbackFrom?: "openai" | "local" | "gemini" | "ollama";
   fallbackReason?: string;
   openAi?: OpenAiEmbeddingClient;
   gemini?: GeminiEmbeddingClient;
+  ollama?: OllamaEmbeddingClient;
 };
 
 export type EmbeddingProviderOptions = {
   config: OpenClawConfig;
   agentDir?: string;
-  provider: "openai" | "local" | "gemini" | "auto";
+  provider: "openai" | "local" | "gemini" | "ollama" | "auto";
   remote?: {
     baseUrl?: string;
     apiKey?: string;
     headers?: Record<string, string>;
   };
   model: string;
-  fallback: "openai" | "gemini" | "local" | "none";
+  fallback: "openai" | "gemini" | "local" | "ollama" | "none";
   local?: {
     modelPath?: string;
     modelCacheDir?: string;
@@ -58,6 +67,22 @@ function canAutoSelectLocal(options: EmbeddingProviderOptions): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Check if Ollama is running with an embedding model available.
+ * This allows auto-selection of Ollama when it's ready to use.
+ */
+async function canAutoSelectOllama(options: EmbeddingProviderOptions): Promise<boolean> {
+  const baseUrl = options.remote?.baseUrl?.trim();
+  // Check if Ollama is running
+  const healthy = await checkOllamaHealth(baseUrl);
+  if (!healthy) {
+    return false;
+  }
+  // Check if embedding model is available
+  const model = options.model?.trim() || DEFAULT_OLLAMA_EMBEDDING_MODEL;
+  return checkOllamaModel(model, baseUrl);
 }
 
 function isMissingApiKeyError(err: unknown): boolean {
@@ -119,7 +144,7 @@ export async function createEmbeddingProvider(
   const requestedProvider = options.provider;
   const fallback = options.fallback;
 
-  const createProvider = async (id: "openai" | "local" | "gemini") => {
+  const createProvider = async (id: "openai" | "local" | "gemini" | "ollama") => {
     if (id === "local") {
       const provider = await createLocalEmbeddingProvider(options);
       return { provider };
@@ -128,17 +153,33 @@ export async function createEmbeddingProvider(
       const { provider, client } = await createGeminiEmbeddingProvider(options);
       return { provider, gemini: client };
     }
+    if (id === "ollama") {
+      const { provider, client } = await createOllamaEmbeddingProvider(options);
+      return { provider, ollama: client };
+    }
     const { provider, client } = await createOpenAiEmbeddingProvider(options);
     return { provider, openAi: client };
   };
 
-  const formatPrimaryError = (err: unknown, provider: "openai" | "local" | "gemini") =>
+  const formatPrimaryError = (err: unknown, provider: "openai" | "local" | "gemini" | "ollama") =>
     provider === "local" ? formatLocalSetupError(err) : formatError(err);
 
   if (requestedProvider === "auto") {
     const missingKeyErrors: string[] = [];
     let localError: string | null = null;
+    let ollamaError: string | null = null;
 
+    // Priority 1: Check for Ollama (local, no API key needed)
+    if (await canAutoSelectOllama(options)) {
+      try {
+        const ollama = await createProvider("ollama");
+        return { ...ollama, requestedProvider };
+      } catch (err) {
+        ollamaError = formatError(err);
+      }
+    }
+
+    // Priority 2: Check for local node-llama-cpp (if model file exists)
     if (canAutoSelectLocal(options)) {
       try {
         const local = await createProvider("local");
@@ -148,6 +189,7 @@ export async function createEmbeddingProvider(
       }
     }
 
+    // Priority 3-4: Try remote providers (openai, gemini)
     for (const provider of ["openai", "gemini"] as const) {
       try {
         const result = await createProvider(provider);
@@ -162,7 +204,7 @@ export async function createEmbeddingProvider(
       }
     }
 
-    const details = [...missingKeyErrors, localError].filter(Boolean) as string[];
+    const details = [...missingKeyErrors, localError, ollamaError].filter(Boolean) as string[];
     if (details.length > 0) {
       throw new Error(details.join("\n\n"));
     }
