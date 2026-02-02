@@ -1,0 +1,35 @@
+name: 'Upstream Sync Check'
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Every Monday at 8am UTC
+  workflow_dispatch:       # Allow manual trigger
+
+jobs:
+  sync_check:
+    runs-on: ubuntu-latest
+    name: Check for upstream updates
+
+    steps:
+    - name: Checkout fork
+      uses: actions/checkout@v4
+      with:
+        ref: main
+        fetch-depth: 0
+
+    - name: Check upstream
+      run: |
+        git remote add upstream https://github.com/openclaw/openclaw.git
+        git fetch upstream main
+
+        LOCAL=$(git rev-parse HEAD)
+        UPSTREAM=$(git rev-parse upstream/main)
+
+        if [ "$LOCAL" != "$UPSTREAM" ]; then
+          echo "::warning::Upstream has new commits. Run 'gh repo sync lucache95/openclaw -b main' to update."
+          echo "## Commits behind upstream:" >> $GITHUB_STEP_SUMMARY
+          git log --oneline HEAD..upstream/main >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Fork is up to date with upstream."
+          echo "## Status: Up to date" >> $GITHUB_STEP_SUMMARY
+        fi
