@@ -1,4 +1,5 @@
 import type { SessionStatus } from "./status.types.js";
+import { getCurrentWarningLevel, type ContextWarningLevel } from "../agents/context-thresholds.js";
 
 export const formatKTokens = (value: number) =>
   `${(value / 1000).toFixed(value >= 10_000 ? 0 : 1)}k`;
@@ -42,6 +43,7 @@ export const shortenText = (value: string, maxLen: number) => {
 
 export const formatTokensCompact = (
   sess: Pick<SessionStatus, "totalTokens" | "contextTokens" | "percentUsed">,
+  colorize?: (level: ContextWarningLevel, text: string) => string,
 ) => {
   const used = sess.totalTokens ?? 0;
   const ctx = sess.contextTokens;
@@ -49,7 +51,9 @@ export const formatTokensCompact = (
     return `${formatKTokens(used)} used`;
   }
   const pctLabel = sess.percentUsed != null ? `${sess.percentUsed}%` : "?%";
-  return `${formatKTokens(used)}/${formatKTokens(ctx)} (${pctLabel})`;
+  const level = getCurrentWarningLevel(used, ctx);
+  const colorizedPct = colorize && level ? colorize(level, pctLabel) : pctLabel;
+  return `${formatKTokens(used)}/${formatKTokens(ctx)} (${colorizedPct})`;
 };
 
 export const formatDaemonRuntimeShort = (runtime?: {
