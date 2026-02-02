@@ -9,14 +9,23 @@ export const DEFAULT_MEMORY_FLUSH_SOFT_TOKENS = 4000;
 
 export const DEFAULT_MEMORY_FLUSH_PROMPT = [
   "Pre-compaction memory flush.",
-  "Store durable memories now (use memory/YYYY-MM-DD.md; create memory/ if needed).",
-  `If nothing to store, reply with ${SILENT_REPLY_TOKEN}.`,
+  "1. Update ACTIVE.md with current working state:",
+  "   - Current Task: What you're working on",
+  "   - Key Decisions: Important choices made this session",
+  "   - Constraints: Limitations or requirements to remember",
+  "   - Working Files: Files you're actively editing",
+  "   - Open Questions: Unresolved issues",
+  "2. Store durable memories to memory/YYYY-MM-DD.md if needed.",
+  `If no updates needed, reply with ${SILENT_REPLY_TOKEN}.`,
 ].join(" ");
 
 export const DEFAULT_MEMORY_FLUSH_SYSTEM_PROMPT = [
   "Pre-compaction memory flush turn.",
-  "The session is near auto-compaction; capture durable memories to disk.",
-  `You may reply, but usually ${SILENT_REPLY_TOKEN} is correct.`,
+  "The session is near auto-compaction.",
+  "CRITICAL: Update ACTIVE.md with your current working context so you can recover after compaction.",
+  "Include: current task, key decisions, constraints, working files, and open questions.",
+  "Then optionally save longer-term notes to memory/YYYY-MM-DD.md.",
+  `You may reply, but usually ${SILENT_REPLY_TOKEN} is correct after updating ACTIVE.md.`,
 ].join(" ");
 
 export type MemoryFlushSettings = {
