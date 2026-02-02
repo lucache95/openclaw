@@ -1,6 +1,11 @@
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import type { ExtensionAPI, FileOperations } from "@mariozechner/pi-coding-agent";
 import {
+  loadActiveContext,
+  writeActiveContext,
+  type ActiveContextData,
+} from "../active-context.js";
+import {
   BASE_CHUNK_RATIO,
   MIN_CHUNK_RATIO,
   SAFETY_MARGIN,
@@ -158,6 +163,41 @@ function formatFileOperations(readFiles: string[], modifiedFiles: string[]): str
   return `\n\n${sections.join("\n\n")}`;
 }
 
+function formatDecisions(decisions: string[] | undefined): string {
+  if (!decisions || decisions.length === 0) {
+    return "";
+  }
+  return `\n\n<decisions>\n${decisions.map((d) => `- ${d}`).join("\n")}\n</decisions>`;
+}
+
+function formatConstraints(constraints: string[] | undefined): string {
+  if (!constraints || constraints.length === 0) {
+    return "";
+  }
+  return `\n\n<constraints>\n${constraints.map((c) => `- ${c}`).join("\n")}\n</constraints>`;
+}
+
+function formatCurrentTask(task: string | undefined): string {
+  if (!task?.trim()) {
+    return "";
+  }
+  return `\n\n<current-task>\n${task.trim()}\n</current-task>`;
+}
+
+async function loadActiveContextSafe(sessionManager: unknown): Promise<ActiveContextData | null> {
+  try {
+    // Get workspace dir from session manager if available
+    const manager = sessionManager as { workspaceDir?: string };
+    if (!manager.workspaceDir) {
+      return null;
+    }
+    return await loadActiveContext(manager.workspaceDir);
+  } catch {
+    // Ignore errors loading active context - it's optional
+    return null;
+  }
+}
+
 export default function compactionSafeguardExtension(api: ExtensionAPI): void {
   api.on("session_before_compact", async (event, ctx) => {
     const { preparation, customInstructions, signal } = event;
@@ -168,7 +208,17 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
       ...preparation.turnPrefixMessages,
     ]);
     const toolFailureSection = formatToolFailuresSection(toolFailures);
-    const fallbackSummary = `${FALLBACK_SUMMARY}${toolFailureSection}${fileOpsSummary}`;
+
+    // Load active context for decisions/constraints preservation
+    let activeContextSummary = "";
+    const activeContext = await loadActiveContextSafe(ctx.sessionManager);
+    if (activeContext) {
+      activeContextSummary += formatCurrentTask(activeContext.currentTask);
+      activeContextSummary += formatDecisions(activeContext.decisions);
+      activeContextSummary += formatConstraints(activeContext.constraints);
+    }
+
+    const fallbackSummary = `${FALLBACK_SUMMARY}${toolFailureSection}${fileOpsSummary}${activeContextSummary}`;
 
     const model = ctx.model;
     if (!model) {
@@ -308,6 +358,7 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
 
       summary += toolFailureSection;
       summary += fileOpsSummary;
+      summary += activeContextSummary;
 
       return {
         compaction: {
