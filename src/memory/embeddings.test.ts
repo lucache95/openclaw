@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_GEMINI_EMBEDDING_MODEL } from "./embeddings-gemini.js";
 
 vi.mock("../agents/model-auth.js", () => ({
@@ -176,6 +176,16 @@ describe("embedding provider remote overrides", () => {
 });
 
 describe("embedding provider auto selection", () => {
+  beforeEach(() => {
+    // Mock Ollama as unavailable so tests can verify OpenAI/Gemini selection
+    vi.doMock("./embeddings-ollama.js", () => ({
+      checkOllamaHealth: vi.fn().mockResolvedValue(false),
+      checkOllamaModel: vi.fn().mockResolvedValue(false),
+      createOllamaEmbeddingProvider: vi.fn().mockRejectedValue(new Error("Ollama not available")),
+      DEFAULT_OLLAMA_EMBEDDING_MODEL: "nomic-embed-text",
+    }));
+  });
+
   afterEach(() => {
     vi.resetAllMocks();
     vi.resetModules();
