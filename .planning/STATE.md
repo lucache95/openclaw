@@ -1,57 +1,62 @@
-# OpenClaw Project State
+# Project State
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-02-02)
+
+**Core value:** Context must survive — never hit token limits or lose context during compaction
+**Current focus:** v2.0 Multi-Agent Infrastructure — build coordination layer for fleet
 
 ## Current Position
 
-**Phase:** 3 of 7 (Local LLM)
-**Plan:** 3 of 3 (Task Routing)
-**Status:** Phase complete
-**Last activity:** 2026-02-02 - Completed 03-03-PLAN.md (Task Routing)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-02 — Milestone v2.0 started
 
-**Progress:** Phase 3 complete
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (v2.0)
 
-## Accumulated Decisions
+## Performance Metrics
 
-| Phase | Decision | Rationale |
-|-------|----------|-----------|
-| 03-01 | qwen2.5:3b for text generation | Good balance of quality/speed on Apple Silicon |
-| 03-01 | nomic-embed-text for embeddings | Efficient 768-dim vectors |
-| 03-01 | OLLAMA_KEEP_ALIVE=60m | Avoid model reload latency |
-| 03-03 | Keyword-based classification | Predictable, zero latency, no ML overhead |
-| 03-03 | 500 char prompt threshold | Balance between simple/complex task detection |
-| 03-03 | Conservative routing | Complex indicators override simple keywords |
+**Velocity:**
+- Total plans completed: 21
+- Average duration: 6.4 min
+- Total execution time: ~2.35 hours
 
-## Blockers/Concerns
+**By Phase:**
 
-None currently.
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 01-setup | 1 | 3 min | 3 min |
+| 02-context-survival | 5 | 33 min | 6.6 min |
+| 03-local-llm | 4 | 30 min | 7.5 min |
+| 04-security | 4 | 22 min | 5.5 min |
+| 05-sub-agents | 2 | 26 min | 13 min |
+| 06-secondary-provider | 3 | 28 min | 9.3 min |
+| 07-documentation | 2 | 7 min | 3.5 min |
 
-## System State
+## Accumulated Context
 
-### Local LLM Infrastructure
+### Decisions
 
-- **Ollama:** v0.15.4 installed and running
-- **API:** http://localhost:11434
-- **Models:**
-  - qwen2.5:3b (1.9GB) - text generation
-  - nomic-embed-text (274MB) - embeddings
-- **GPU:** Metal acceleration at 100%
+All v1.0 decisions logged in PROJECT.md Key Decisions table.
 
-### Task Routing
+### Pending Todos
 
-- **Ollama client:** src/agents/ollama-client.ts
-- **Task router:** src/agents/task-router.ts
-- **Simple keywords:** summarize, classify, format, extract, list, rewrite, translate
-- **Complex indicators:** step by step, write code, implement, debug, refactor
+None — milestone complete.
+
+### Blockers/Concerns
+
+- Three-tier routing temporarily disabled (classification issues with tool-requiring queries)
+- Pattern-based improvements in task-router.ts pending testing
 
 ## Session Continuity
 
-**Last session:** 2026-02-02
-**Stopped at:** Completed 03-03-PLAN.md (Task Routing)
-**Resume file:** None
-
-## Phase Summaries
-
-- [03-01-SUMMARY.md](./phases/03-local-llm/03-01-SUMMARY.md) - Ollama installation with qwen2.5:3b and nomic-embed-text
-- [03-03-SUMMARY.md](./phases/03-local-llm/03-03-SUMMARY.md) - Task routing for local vs cloud LLM selection
+Last session: 2026-02-02
+Milestone: v2.0 started
+Resume: Continue with requirements definition
 
 ---
-*Last updated: 2026-02-02*
+*State initialized: 2026-02-01*
+*v1.0 milestone complete: 2026-02-02*
+*v2.0 milestone started: 2026-02-02*
