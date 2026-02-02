@@ -344,7 +344,8 @@ export async function runReplyAgent(params: {
       return finalizeWithFollowup(runOutcome.payload, queueKey, runFollowupTurn);
     }
 
-    const { runResult, fallbackProvider, fallbackModel, directlySentBlockKeys } = runOutcome;
+    const { runResult, fallbackProvider, fallbackModel, directlySentBlockKeys, contextWarnings } =
+      runOutcome;
     let { didLogHeartbeatStrip, autoCompactionCompleted } = runOutcome;
 
     if (
@@ -514,6 +515,14 @@ export async function runReplyAgent(params: {
         const suffix = typeof count === "number" ? ` (count ${count})` : "";
         finalPayloads = [{ text: `🧹 Auto-compaction complete${suffix}.` }, ...finalPayloads];
       }
+    }
+    // Prepend context threshold warnings (always shown, not just when verbose)
+    if (contextWarnings && contextWarnings.length > 0) {
+      const warningMessages = contextWarnings.map((w) => {
+        const icon = w.level === "red" ? "🔴" : w.level === "orange" ? "🟠" : "🟡";
+        return `${icon} ${w.message} (${Math.round(w.usagePercent * 100)}%)`;
+      });
+      finalPayloads = [{ text: warningMessages.join("\n") }, ...finalPayloads];
     }
     if (verboseEnabled && activeIsNewSession) {
       finalPayloads = [{ text: `🧭 New session: ${followupRun.run.sessionId}` }, ...finalPayloads];

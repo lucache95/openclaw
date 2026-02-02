@@ -12,6 +12,7 @@ import {
   checkContextThresholds,
   resetContextThresholdState,
   type ContextThresholdState,
+  type ContextWarningEvent,
 } from "../../agents/context-thresholds.js";
 import { runWithModelFallback } from "../../agents/model-fallback.js";
 import { isCliProvider } from "../../agents/model-selection.js";
@@ -54,6 +55,8 @@ export type AgentRunLoopResult =
       autoCompactionCompleted: boolean;
       /** Payload keys sent directly (not via pipeline) during tool flush. */
       directlySentBlockKeys?: Set<string>;
+      /** Context threshold warnings triggered during this run. */
+      contextWarnings?: ContextWarningEvent[];
     }
   | { kind: "final"; payload: ReplyPayload };
 
@@ -126,6 +129,7 @@ export async function runAgentTurnWithFallback(params: {
   let fallbackProvider = params.followupRun.run.provider;
   let fallbackModel = params.followupRun.run.model;
   let didResetAfterCompactionFailure = false;
+  let contextWarnings: ContextWarningEvent[] = [];
 
   while (true) {
     try {
@@ -510,13 +514,16 @@ export async function runAgentTurnWithFallback(params: {
       if (params.contextThresholdState && params.contextWindowTokens) {
         const entry = params.getActiveSessionEntry();
         if (entry?.totalTokens && entry.totalTokens > 0) {
-          checkContextThresholds({
+          const warnings = checkContextThresholds({
             totalTokens: entry.totalTokens,
             contextWindowTokens: params.contextWindowTokens,
             state: params.contextThresholdState,
             runId,
             sessionKey: params.sessionKey,
           });
+          if (warnings.length > 0) {
+            contextWarnings = warnings;
+          }
         }
       }
 
@@ -623,5 +630,6 @@ export async function runAgentTurnWithFallback(params: {
     didLogHeartbeatStrip,
     autoCompactionCompleted,
     directlySentBlockKeys: directlySentBlockKeys.size > 0 ? directlySentBlockKeys : undefined,
+    contextWarnings: contextWarnings.length > 0 ? contextWarnings : undefined,
   };
 }
