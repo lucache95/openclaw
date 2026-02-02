@@ -1,7 +1,7 @@
 # Requirements: OpenClaw v2.0 Multi-Agent Infrastructure
 
 **Defined:** 2026-02-02
-**Core Value:** Context must survive — build coordination layer for reliable multi-agent fleet
+**Core Value:** Context must survive -- build coordination layer for reliable multi-agent fleet
 
 ## v2.0 Requirements
 
@@ -31,7 +31,7 @@ Requirements for multi-agent infrastructure. Each maps to roadmap phases.
 
 - [ ] **COORD-01**: Daily standup cron generates summary and sends to Telegram
 - [ ] **COORD-02**: Agent status tracked in Mission Control (idle/active/blocked)
-- [ ] **COORD-03**: Task lifecycle states enforced (inbox → assigned → in_progress → review → done)
+- [ ] **COORD-03**: Task lifecycle states enforced (inbox -> assigned -> in_progress -> review -> done)
 - [ ] **COORD-04**: Activity feed logs all agent actions
 
 ### Agent Templates
@@ -78,34 +78,34 @@ Deferred to agent deployment milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | TBD | Pending |
-| INFRA-02 | TBD | Pending |
-| INFRA-03 | TBD | Pending |
-| HEART-01 | TBD | Pending |
-| HEART-02 | TBD | Pending |
-| HEART-03 | TBD | Pending |
-| HEART-04 | TBD | Pending |
-| NOTIF-01 | TBD | Pending |
-| NOTIF-02 | TBD | Pending |
-| NOTIF-03 | TBD | Pending |
-| NOTIF-04 | TBD | Pending |
-| COORD-01 | TBD | Pending |
-| COORD-02 | TBD | Pending |
-| COORD-03 | TBD | Pending |
-| COORD-04 | TBD | Pending |
-| TMPL-01 | TBD | Pending |
-| TMPL-02 | TBD | Pending |
-| TMPL-03 | TBD | Pending |
-| TMPL-04 | TBD | Pending |
-| TMPL-05 | TBD | Pending |
-| TMPL-06 | TBD | Pending |
-| TMPL-07 | TBD | Pending |
+| INFRA-01 | Phase 8 | Pending |
+| INFRA-02 | Phase 8 | Pending |
+| INFRA-03 | Phase 8 | Pending |
+| HEART-01 | Phase 9 | Pending |
+| HEART-02 | Phase 9 | Pending |
+| HEART-03 | Phase 9 | Pending |
+| HEART-04 | Phase 9 | Pending |
+| NOTIF-01 | Phase 10 | Pending |
+| NOTIF-02 | Phase 10 | Pending |
+| NOTIF-03 | Phase 10 | Pending |
+| NOTIF-04 | Phase 10 | Pending |
+| COORD-01 | Phase 11 | Pending |
+| COORD-02 | Phase 11 | Pending |
+| COORD-03 | Phase 11 | Pending |
+| COORD-04 | Phase 11 | Pending |
+| TMPL-01 | Phase 12 | Pending |
+| TMPL-02 | Phase 12 | Pending |
+| TMPL-03 | Phase 12 | Pending |
+| TMPL-04 | Phase 12 | Pending |
+| TMPL-05 | Phase 12 | Pending |
+| TMPL-06 | Phase 12 | Pending |
+| TMPL-07 | Phase 12 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 22 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after initial definition*
+*Traceability updated: 2026-02-02 after roadmap creation*
