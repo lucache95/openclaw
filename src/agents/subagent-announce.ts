@@ -17,6 +17,7 @@ import {
   mergeDeliveryContext,
   normalizeDeliveryContext,
 } from "../utils/delivery-context.js";
+import { type DelegationBrief, formatDelegationBriefForPrompt } from "./delegation-brief.js";
 import { isEmbeddedPiRunActive, queueEmbeddedPiMessage } from "./pi-embedded.js";
 import { type AnnounceQueueItem, enqueueAnnounce } from "./subagent-announce-queue.js";
 import { readLatestAssistantReply } from "./tools/agent-step.js";
@@ -294,32 +295,48 @@ export function buildSubagentSystemPrompt(params: {
   childSessionKey: string;
   label?: string;
   task?: string;
+  delegationBrief?: DelegationBrief;
 }) {
-  const taskText =
-    typeof params.task === "string" && params.task.trim()
-      ? params.task.replace(/\s+/g, " ").trim()
-      : "{{TASK_DESCRIPTION}}";
-  const lines = [
+  const lines: (string | undefined)[] = [
     "# Subagent Context",
     "",
     "You are a **subagent** spawned by the main agent for a specific task.",
     "",
-    "## Your Role",
-    `- You were created to handle: ${taskText}`,
-    "- Complete this task. That's your entire purpose.",
-    "- You are NOT the main agent. Don't try to be.",
-    "",
+  ];
+
+  // If delegation brief provided, use formatted brief content
+  if (params.delegationBrief) {
+    lines.push(formatDelegationBriefForPrompt(params.delegationBrief));
+    lines.push("");
+  } else {
+    // Fall back to existing behavior with task description
+    const taskText =
+      typeof params.task === "string" && params.task.trim()
+        ? params.task.replace(/\s+/g, " ").trim()
+        : "{{TASK_DESCRIPTION}}";
+
+    lines.push(
+      "## Your Role",
+      `- You were created to handle: ${taskText}`,
+      "- Complete this task. That's your entire purpose.",
+      "- You are NOT the main agent. Don't try to be.",
+      "",
+      "## Output Format",
+      "When complete, your final response should include:",
+      "- What you accomplished or found",
+      "- Any relevant details the main agent should know",
+      "- Keep it concise but informative",
+      "",
+    );
+  }
+
+  // Common rules that apply regardless of brief
+  lines.push(
     "## Rules",
     "1. **Stay focused** - Do your assigned task, nothing else",
     "2. **Complete the task** - Your final message will be automatically reported to the main agent",
     "3. **Don't initiate** - No heartbeats, no proactive actions, no side quests",
     "4. **Be ephemeral** - You may be terminated after task completion. That's fine.",
-    "",
-    "## Output Format",
-    "When complete, your final response should include:",
-    "- What you accomplished or found",
-    "- Any relevant details the main agent should know",
-    "- Keep it concise but informative",
     "",
     "## What You DON'T Do",
     "- NO user conversations (that's main agent's job)",
@@ -336,8 +353,9 @@ export function buildSubagentSystemPrompt(params: {
       : undefined,
     `- Your session: ${params.childSessionKey}.`,
     "",
-  ].filter((line): line is string => line !== undefined);
-  return lines.join("\n");
+  );
+
+  return lines.filter((line): line is string => line !== undefined).join("\n");
 }
 
 export type SubagentRunOutcome = {
