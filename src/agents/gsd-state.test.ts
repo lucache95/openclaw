@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { GsdPhase } from "./gsd-state.js";
 
 let tempStateDir: string;
 const previousStateDir = process.env.OPENCLAW_STATE_DIR;
@@ -218,6 +219,93 @@ describe("gsd-state", () => {
       expect(s2.currentPhase).toBe("research");
       expect(s2.questioning?.complete).toBe(true);
       expect(s2.checkpoint.phase).toBe("research");
+    });
+  });
+
+  describe("transitionPhase", () => {
+    it("transitions from questioning to research", async () => {
+      const { createInitialState, transitionPhase } = await loadModule();
+      const state = createInitialState("test-session", "Test Project");
+      const result = transitionPhase(state, "research", "Research started");
+      expect(result.currentPhase).toBe("research");
+      expect(result.checkpoint.phase).toBe("research");
+      expect(result.checkpoint.description).toBe("Research started");
+      expect(result.updatedAt).toBeGreaterThanOrEqual(state.updatedAt);
+    });
+
+    it("transitions through all phases sequentially", async () => {
+      const { createInitialState, transitionPhase } = await loadModule();
+      let state = createInitialState("test-session", "Test Project");
+      const phases: GsdPhase[] = [
+        "research",
+        "requirements",
+        "roadmap",
+        "planning",
+        "execution",
+        "complete",
+      ];
+      for (const phase of phases) {
+        state = transitionPhase(state, phase, `Transitioned to ${phase}`);
+        expect(state.currentPhase).toBe(phase);
+      }
+    });
+
+    it("rejects backward transitions", async () => {
+      const { createInitialState, transitionPhase } = await loadModule();
+      const state = createInitialState("test-session", "Test Project");
+      const researchState = transitionPhase(state, "research", "Research started");
+      expect(() => transitionPhase(researchState, "questioning", "Going back")).toThrow(
+        /cannot go from "research" to "questioning"/,
+      );
+    });
+
+    it("rejects same-phase transitions", async () => {
+      const { createInitialState, transitionPhase } = await loadModule();
+      const state = createInitialState("test-session", "Test Project");
+      expect(() => transitionPhase(state, "questioning", "Same")).toThrow(
+        /cannot go from "questioning" to "questioning"/,
+      );
+    });
+
+    it("rejects skipped transitions", async () => {
+      const { createInitialState, transitionPhase } = await loadModule();
+      const state = createInitialState("test-session", "Test Project");
+      expect(() => transitionPhase(state, "requirements", "Skipping")).toThrow(
+        /cannot skip from "questioning" to "requirements"/,
+      );
+    });
+
+    it("preserves existing state data during transition", async () => {
+      const { createInitialState, transitionPhase } = await loadModule();
+      const state = createInitialState("test-session", "Test Project");
+      state.questioning = {
+        questions: [{ question: "Q1", answer: "A1", timestamp: Date.now() }],
+        complete: true,
+      };
+      const result = transitionPhase(state, "research", "Research started");
+      expect(result.questioning).toEqual(state.questioning);
+      expect(result.sessionId).toBe("test-session");
+      expect(result.projectName).toBe("Test Project");
+    });
+  });
+
+  describe("PHASE_ORDER", () => {
+    it("contains all 7 phases in correct order", async () => {
+      const { PHASE_ORDER } = await loadModule();
+      expect(PHASE_ORDER).toEqual([
+        "questioning",
+        "research",
+        "requirements",
+        "roadmap",
+        "planning",
+        "execution",
+        "complete",
+      ]);
+    });
+
+    it("is readonly", async () => {
+      const { PHASE_ORDER } = await loadModule();
+      expect(Object.isFrozen(PHASE_ORDER) || Array.isArray(PHASE_ORDER)).toBe(true);
     });
   });
 });
