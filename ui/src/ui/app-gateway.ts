@@ -8,6 +8,7 @@ import type { AgentsListResult, PresenceEntry, HealthSnapshot, StatusSummary } f
 import { CHAT_SESSIONS_ACTIVE_MINUTES, flushChatQueueForEvent } from "./app-chat";
 import { applySettings, loadCron, refreshActiveTab, setLastActiveSessionKey } from "./app-settings";
 import { handleAgentEvent, resetToolStream, type AgentEventPayload } from "./app-tool-stream";
+import { AgentsController } from "./controllers/agents-controller";
 import { loadAgents } from "./controllers/agents";
 import { loadAssistantIdentity } from "./controllers/assistant-identity";
 import { loadChatHistory } from "./controllers/chat";
@@ -24,6 +25,8 @@ import { loadSessions } from "./controllers/sessions";
 import { GatewayBrowserClient } from "./gateway";
 import { setConnectionStatus } from "./state/connection";
 import { setChatStream, setChatMessages } from "./state/chat";
+
+const agentsController = new AgentsController();
 
 type GatewayHost = {
   settings: UiSettings;
@@ -133,6 +136,7 @@ export function connectGateway(host: GatewayHost) {
       (host as unknown as { chatStream: string | null }).chatStream = null;
       (host as unknown as { chatStreamStartedAt: number | null }).chatStreamStartedAt = null;
       resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
+      agentsController.reset();
       void loadAssistantIdentity(host as unknown as OpenClawApp);
       void loadAgents(host as unknown as OpenClawApp);
       void loadNodes(host as unknown as OpenClawApp, { quiet: true });
@@ -180,6 +184,7 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
 
   if (evt.event === "agent") {
     if (host.onboarding) return;
+    agentsController.handleEvent(evt.payload as AgentEventPayload | undefined);
     handleAgentEvent(
       host as unknown as Parameters<typeof handleAgentEvent>[0],
       evt.payload as AgentEventPayload | undefined,
