@@ -236,12 +236,11 @@ Plans:
   3. Typing/activity indicators show which agent is currently generating, and agent status (idle/thinking/executing/waiting) is visible
   4. Messages auto-scroll to newest content, but scrolling up pauses auto-scroll until the user scrolls back down
   5. Agent messages render markdown and code blocks with proper formatting
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 27-01: TBD
-- [ ] 27-02: TBD
-- [ ] 27-03: TBD
+- [ ] 27-01-PLAN.md -- Per-session conversation signals and AgentsController event capture
+- [ ] 27-02-PLAN.md -- Conversation view component with live streaming, auto-scroll, and markdown
 
 ## Progress
 
@@ -259,8 +258,8 @@ Phases execute in numeric order: 8 -> 8.1 -> 8.2 -> 9 -> 9.1 -> 10 -> etc.
 | 18. Message Persistence | v2.2 | 3/3 | Complete | - |
 | 19. Gateway Connection | v2.2 | 0/2 | Planned | - |
 | 25. Event Wiring | v2.3 | 0/TBD | Not started | - |
-| 26. Agents Tab & Cards | v2.3 | 0/1 | Planned | - |
-| 27. Conversation View | v2.3 | 0/TBD | Not started | - |
+| 26. Agents Tab & Cards | v2.3 | 1/1 | Complete | - |
+| 27. Conversation View | v2.3 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-02*
@@ -269,3 +268,4 @@ Phases execute in numeric order: 8 -> 8.1 -> 8.2 -> 9 -> 9.1 -> 10 -> etc.
 *v2.2 phase 19 planned: 2026-02-02*
 *v2.3 phases 25-27 planned: 2026-02-03*
 *Phase 26 planned: 2026-02-03*
+*Phase 27 planned: 2026-02-03*
