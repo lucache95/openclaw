@@ -22,10 +22,19 @@ export interface UsageEntry {
   timestamp: number;
 }
 
+export type ConversationMessage = {
+  agentId: string;
+  text: string;
+  timestamp: number;
+  role: "assistant" | "system" | "tool";
+};
+
 // --- Signals ---
 
 export const agentSessions = signal<Map<string, SessionCardData>>(new Map());
 export const agentCosts = signal<Map<string, UsageEntry[]>>(new Map());
+export const sessionConversations = signal<Map<string, ConversationMessage[]>>(new Map());
+export const sessionStreams = signal<Map<string, { agentId: string; text: string }>>(new Map());
 
 // --- Computed ---
 
@@ -145,8 +154,52 @@ export function getSessionCost(sessionKey: string): number {
   return sum;
 }
 
+// --- Conversation mutators ---
+
+const CONVERSATION_MESSAGE_CAP = 500;
+
+/** Append a message to a session's conversation. Caps at 500 most-recent messages. */
+export function pushSessionMessage(sessionKey: string, msg: ConversationMessage): void {
+  const next = new Map(sessionConversations.get());
+  let messages = [...(next.get(sessionKey) ?? []), msg];
+  if (messages.length > CONVERSATION_MESSAGE_CAP) {
+    messages = messages.slice(-CONVERSATION_MESSAGE_CAP);
+  }
+  next.set(sessionKey, messages);
+  sessionConversations.set(next);
+}
+
+/** Set or update the active streaming text for a session. */
+export function setSessionStream(sessionKey: string, agentId: string, text: string): void {
+  const next = new Map(sessionStreams.get());
+  next.set(sessionKey, { agentId, text });
+  sessionStreams.set(next);
+}
+
+/** Remove a session's active stream entry. */
+export function clearSessionStream(sessionKey: string): void {
+  const next = new Map(sessionStreams.get());
+  next.delete(sessionKey);
+  sessionStreams.set(next);
+}
+
+/** Move a session's active stream text to a completed conversation message, then clear the stream. */
+export function finalizeSessionStream(sessionKey: string): void {
+  const stream = sessionStreams.get().get(sessionKey);
+  if (!stream) return;
+  pushSessionMessage(sessionKey, {
+    agentId: stream.agentId,
+    text: stream.text,
+    timestamp: Date.now(),
+    role: "assistant",
+  });
+  clearSessionStream(sessionKey);
+}
+
 /** Clear all metrics state (for testing/cleanup). */
 export function resetMetrics(): void {
   agentSessions.set(new Map());
   agentCosts.set(new Map());
+  sessionConversations.set(new Map());
+  sessionStreams.set(new Map());
 }
