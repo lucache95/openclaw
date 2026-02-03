@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 ## Current Position
 
 Phase: 27.1 (A2A Conversation Visibility) -- INSERTED
-Plan: 02 of 3
+Plan: 01 of 3
 Status: In progress
-Last activity: 2026-02-03 -- Completed 27.1-02-PLAN.md (UI state layer)
+Last activity: 2026-02-03 -- Completed 27.1-01-PLAN.md (backend event emission)
 
 Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2) | [####################] 100% (v2.3)
 
@@ -32,8 +32,8 @@ Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2
 
 **Velocity (v2.3):**
 
-- Plans completed: 3 (phase 26 + 27-01 + 27-02)
-- Duration: 11 min total
+- Plans completed: 4 (phase 26 + 27-01 + 27-02 + 27.1-01)
+- Duration: 15 min total
 
 ## Accumulated Context
 
@@ -57,6 +57,10 @@ v2.3 decisions:
 - [27-02] Auto-scroll with module-level userScrolledUp flag (no signal overhead for ephemeral state)
 - [27-02] streamText property on message-stream with nullish coalescing fallback for backward compatibility
 - [27-02] Clickable div wrapper on session cards for drill-down (separation of concerns)
+- [27.1-01] A2A events use stream:'a2a' with conversationId for threading
+- [27.1-01] Turn 0 = initial message, turn 1 = round-one reply, turns 2+ = ping-pong
+- [27.1-01] REPLY_SKIP filtered from A2A event emission (control signal, not conversation content)
+- [27.1-01] Announce step excluded from A2A events (delivery mechanism, not conversation)
 - [27.1-02] A2AConversation type with ordered turns array (distinct from session conversations)
 - [27.1-02] sessionA2ALinks computed signal maps sessionKey to conversationIds for cross-referencing
 - [27.1-02] Immutable Map pattern for a2aConversations signal (new Map on every mutation)
@@ -78,9 +82,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-03T23:05:42Z
+Last session: 2026-02-03T23:03:18Z
 Milestone: v2.3 Live Agent Dashboard - Phase 27.1 (A2A Conversation Visibility)
-Stopped at: Completed 27.1-02-PLAN.md -- UI state layer for A2A conversations
+Stopped at: Completed 27.1-01-PLAN.md -- backend A2A event emission
 Resume file: None
 
 ---
@@ -93,4 +97,4 @@ _Phase 26 plan 01 complete: 2026-02-03_
 _Phase 27 plan 01 complete: 2026-02-03_
 _Phase 27 plan 02 complete: 2026-02-03_
 _v2.3 milestone complete: 2026-02-03_
-_Phase 27.1 plan 02 complete: 2026-02-03_
+_Phase 27.1 plan 01 complete: 2026-02-03_
