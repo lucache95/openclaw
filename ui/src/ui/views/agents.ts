@@ -1,9 +1,5 @@
-import { html, nothing } from "lit";
 import { signal } from "@lit-labs/signals";
-import { agentSessions } from "../state/metrics.ts";
-import { connectionStatus } from "../state/connection.ts";
-import { renderConversation } from "./conversation-view.ts";
-import "../components/agent-session-card.ts";
+import { html, nothing } from "lit";
 import type {
   AgentFileEntry,
   AgentsFilesListResult,
@@ -22,12 +18,16 @@ import {
   resolveToolProfilePolicy,
 } from "../../../../src/agents/tool-policy.js";
 import { formatAgo } from "../format.ts";
+import "../components/agent-session-card.ts";
 import {
   formatCronPayload,
   formatCronSchedule,
   formatCronState,
   formatNextRun,
 } from "../presenter.ts";
+import { connectionStatus } from "../state/connection.ts";
+import { agentSessions } from "../state/metrics.ts";
+import { renderConversation } from "./conversation-view.ts";
 
 /** Currently selected session key for conversation drill-down. */
 const selectedSession = signal<string | null>(null);
@@ -45,7 +45,7 @@ export function renderAgentSessions() {
       <section class="card">
         <div class="card-title">Agent Sessions</div>
         <div class="card-sub">Live multi-agent activity monitor.</div>
-        <div class="callout" style="margin-top: 16px;">
+        <div class="callout" style="margin-top: 16px">
           Not connected to gateway. Agent session data is unavailable while offline.
         </div>
       </section>
@@ -59,7 +59,7 @@ export function renderAgentSessions() {
       <section class="card">
         <div class="card-title">Agent Sessions</div>
         <div class="card-sub">Live multi-agent activity monitor.</div>
-        <div class="muted" style="margin-top: 16px;">
+        <div class="muted" style="margin-top: 16px">
           No active agent sessions. Sessions will appear here when agents start running.
         </div>
       </section>
@@ -87,6 +87,13 @@ export function renderAgentSessions() {
                 .endedAt=${s.endedAt ?? 0}
                 currentStep=${s.currentStep ?? ""}
               ></agent-session-card>
+            </div>
+          `,
+        )}
+      </div>
+    </section>
+  `;
+}
 
 export type AgentsPanel = "overview" | "files" | "tools" | "skills" | "channels" | "cron";
 
