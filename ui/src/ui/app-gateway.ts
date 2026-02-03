@@ -23,6 +23,7 @@ import { loadNodes } from "./controllers/nodes";
 import { loadSessions } from "./controllers/sessions";
 import { GatewayBrowserClient } from "./gateway";
 import { setConnectionStatus } from "./state/connection";
+import { setChatStream, setChatMessages } from "./state/chat";
 
 type GatewayHost = {
   settings: UiSettings;
@@ -195,6 +196,10 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
       );
     }
     const state = handleChatEvent(host as unknown as OpenClawApp, payload);
+
+    // Sync streaming text to signals layer
+    setChatStream((host as unknown as { chatStream: string | null }).chatStream);
+
     if (state === "final" || state === "error" || state === "aborted") {
       resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
       void flushChatQueueForEvent(host as unknown as Parameters<typeof flushChatQueueForEvent>[0]);
@@ -208,7 +213,11 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
         }
       }
     }
-    if (state === "final") void loadChatHistory(host as unknown as OpenClawApp);
+    if (state === "final") {
+      void loadChatHistory(host as unknown as OpenClawApp).then(() => {
+        setChatMessages((host as unknown as { chatMessages: unknown[] }).chatMessages);
+      });
+    }
     return;
   }
 
