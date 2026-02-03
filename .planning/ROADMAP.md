@@ -4,6 +4,7 @@
 
 - v1.0 Core Optimization - Phases 1-7 (shipped 2026-02-02)
 - **v2.0 Multi-Agent Infrastructure** - Phases 8-12 (in progress)
+- **v2.2 Agent Chat Interface** - Phases 18-24
 
 ## Phases
 
@@ -167,6 +168,27 @@ Plans:
 - [ ] 12-02: TBD
 - [ ] 12-03: TBD
 
+## v2.2 Agent Chat Interface
+
+**Milestone Goal:** Build the webchat agent interface with real-time messaging, resilient connections, and reactive UI state.
+
+- [x] **Phase 18: Message Persistence & Replay** - SQLite chat persistence, replay RPC, sequence tracking
+- [ ] **Phase 19: Gateway Connection & State Management** - Resilient WebSocket connection with reactive signals
+
+### Phase 19: Gateway Connection & State Management
+**Goal**: Clients maintain a resilient real-time connection with reactive UI state
+**Depends on**: Phase 18 (completed)
+**Requirements**: MSG-04, MSG-05
+**Success Criteria** (what must be TRUE):
+  1. WebSocket auto-reconnects after network interruption with exponential backoff (no manual refresh needed)
+  2. UI components reactively update when new messages arrive via @lit-labs/signals state layer
+  3. Connection status is visible to the user (connected, reconnecting, disconnected)
+**Plans**: 2 plans
+
+Plans:
+- [ ] 19-01-PLAN.md -- Install @lit-labs/signals, create connection state signals and indicator component
+- [ ] 19-02-PLAN.md -- Wire signals into gateway lifecycle, create chat signals, render indicator in UI
+
 ## Progress
 
 **Execution Order:**
@@ -180,8 +202,11 @@ Phases execute in numeric order: 8 -> 8.1 -> 8.2 -> 9 -> 9.1 -> 10 -> etc.
 | 10. Notification | v2.0 | 0/TBD | Not started | - |
 | 11. Coordination | v2.0 | 0/TBD | Not started | - |
 | 12. Templates | v2.0 | 0/TBD | Not started | - |
+| 18. Message Persistence | v2.2 | 3/3 | Complete | - |
+| 19. Gateway Connection | v2.2 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-02*
 *v1.0 shipped: 2026-02-02*
 *v2.0 started: 2026-02-02*
+*v2.2 phase 19 planned: 2026-02-02*
