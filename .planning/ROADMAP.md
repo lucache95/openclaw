@@ -5,6 +5,7 @@
 - v1.0 Core Optimization - Phases 1-7 (shipped 2026-02-02)
 - **v2.0 Multi-Agent Infrastructure** - Phases 8-12 (in progress)
 - **v2.2 Agent Chat Interface** - Phases 18-24
+- **v2.3 Live Agent Dashboard** - Phases 25-27
 
 ## Phases
 
@@ -189,6 +190,59 @@ Plans:
 - [ ] 19-01-PLAN.md -- Install @lit-labs/signals, create connection state signals and indicator component
 - [ ] 19-02-PLAN.md -- Wire signals into gateway lifecycle, create chat signals, render indicator in UI
 
+## v2.3 Live Agent Dashboard
+
+**Milestone Goal:** Wire v2.2 UI components to live gateway events so the Agents tab shows real-time agent sessions, handoffs, and status updates with full agent conversation visibility.
+
+- [ ] **Phase 25: Event Wiring Foundation** - AgentsController, gateway event routing, signals connection
+- [ ] **Phase 26: Agents Tab & Session Cards** - Tab registration, view rendering, live session cards
+- [ ] **Phase 27: Conversation View** - Live message stream, typing indicators, markdown, auto-scroll
+
+### Phase 25: Event Wiring Foundation
+**Goal**: Gateway agent events flow through a controller to reactive signals that drive UI updates
+**Depends on**: Phase 24 (v2.2 complete)
+**Requirements**: WIRE-01, WIRE-02, WIRE-03
+**Success Criteria** (what must be TRUE):
+  1. AgentsController class exists and bridges gateway WebSocket events to agentSessions signal updates
+  2. Gateway "agent" lifecycle events (spawn, status change, complete, error) update the agentSessions signal in real time
+  3. AgentsController is initialized in app.ts and wired into app-gateway.ts event routing so events flow end-to-end
+**Plans**: TBD
+
+Plans:
+- [ ] 25-01: TBD
+- [ ] 25-02: TBD
+
+### Phase 26: Agents Tab & Session Cards
+**Goal**: Users can navigate to an Agents tab and see live session cards reflecting real-time agent activity
+**Depends on**: Phase 25
+**Requirements**: TAB-01, TAB-02, TAB-03, LIVE-01, LIVE-02, LIVE-03
+**Success Criteria** (what must be TRUE):
+  1. "Agents" tab appears in navigation with icon, title, and subtitle, and clicking it shows the agents view
+  2. Session cards render from live agentSessions signal data with real-time status updates (thinking/executing/complete/error)
+  3. Each session card displays the agent's name and color identity marker from live event data
+  4. When no sessions exist or the gateway is offline, appropriate empty/disconnected states are shown
+**Plans**: 1 plan
+
+Plans:
+- [ ] 26-01-PLAN.md -- Register agents tab in navigation and create live session cards view with signal wiring
+
+### Phase 27: Conversation View
+**Goal**: Users can watch full agent-to-agent conversations stream in real time with rich formatting
+**Depends on**: Phase 26
+**Requirements**: CHAT-01, CHAT-02, CHAT-03, CHAT-04, CHAT-05, CHAT-06
+**Success Criteria** (what must be TRUE):
+  1. Clicking a session card opens a live message stream showing agent-to-agent conversation with token-by-token streaming
+  2. Each message bubble shows the agent's avatar, name, and color so agents are visually distinguishable
+  3. Typing/activity indicators show which agent is currently generating, and agent status (idle/thinking/executing/waiting) is visible
+  4. Messages auto-scroll to newest content, but scrolling up pauses auto-scroll until the user scrolls back down
+  5. Agent messages render markdown and code blocks with proper formatting
+**Plans**: TBD
+
+Plans:
+- [ ] 27-01: TBD
+- [ ] 27-02: TBD
+- [ ] 27-03: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -204,9 +258,14 @@ Phases execute in numeric order: 8 -> 8.1 -> 8.2 -> 9 -> 9.1 -> 10 -> etc.
 | 12. Templates | v2.0 | 0/TBD | Not started | - |
 | 18. Message Persistence | v2.2 | 3/3 | Complete | - |
 | 19. Gateway Connection | v2.2 | 0/2 | Planned | - |
+| 25. Event Wiring | v2.3 | 0/TBD | Not started | - |
+| 26. Agents Tab & Cards | v2.3 | 0/1 | Planned | - |
+| 27. Conversation View | v2.3 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
 *v1.0 shipped: 2026-02-02*
 *v2.0 started: 2026-02-02*
 *v2.2 phase 19 planned: 2026-02-02*
+*v2.3 phases 25-27 planned: 2026-02-03*
+*Phase 26 planned: 2026-02-03*
