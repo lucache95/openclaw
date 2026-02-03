@@ -9,6 +9,14 @@ export type AgentEventPayload = {
   ts: number;
   data: Record<string, unknown>;
   sessionKey?: string;
+  spawnedBy?: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    model: string;
+    tier: "local" | "cheap" | "quality";
+    costUsd: number;
+  };
 };
 
 export type AgentRunContext = {
