@@ -6,11 +6,13 @@ export const TAB_GROUPS = [
     label: "Control",
     tabs: ["overview", "channels", "instances", "sessions", "cron"],
   },
-  { label: "Agent", tabs: ["skills", "nodes"] },
+  { label: "Agent", tabs: ["agents", "skills", "nodes"] },
   { label: "Settings", tabs: ["config", "debug", "logs"] },
+  { label: "Dev", tabs: ["viz"] },
 ] as const;
 
 export type Tab =
+  | "agents"
   | "overview"
   | "channels"
   | "instances"
@@ -21,9 +23,11 @@ export type Tab =
   | "chat"
   | "config"
   | "debug"
-  | "logs";
+  | "logs"
+  | "viz";
 
 const TAB_PATHS: Record<Tab, string> = {
+  agents: "/agents",
   overview: "/overview",
   channels: "/channels",
   instances: "/instances",
@@ -35,6 +39,7 @@ const TAB_PATHS: Record<Tab, string> = {
   config: "/config",
   debug: "/debug",
   logs: "/logs",
+  viz: "/viz",
 };
 
 const PATH_TO_TAB = new Map(Object.entries(TAB_PATHS).map(([tab, path]) => [path, tab as Tab]));
@@ -100,6 +105,8 @@ export function inferBasePathFromPathname(pathname: string): string {
 
 export function iconForTab(tab: Tab): IconName {
   switch (tab) {
+    case "agents":
+      return "puzzle";
     case "chat":
       return "messageSquare";
     case "overview":
@@ -122,6 +129,8 @@ export function iconForTab(tab: Tab): IconName {
       return "bug";
     case "logs":
       return "scrollText";
+    case "viz":
+      return "brain";
     default:
       return "folder";
   }
@@ -129,6 +138,8 @@ export function iconForTab(tab: Tab): IconName {
 
 export function titleForTab(tab: Tab) {
   switch (tab) {
+    case "agents":
+      return "Agents";
     case "overview":
       return "Overview";
     case "channels":
@@ -151,6 +162,8 @@ export function titleForTab(tab: Tab) {
       return "Debug";
     case "logs":
       return "Logs";
+    case "viz":
+      return "Viz Demo";
     default:
       return "Control";
   }
@@ -158,6 +171,8 @@ export function titleForTab(tab: Tab) {
 
 export function subtitleForTab(tab: Tab) {
   switch (tab) {
+    case "agents":
+      return "Live agent sessions and multi-agent activity.";
     case "overview":
       return "Gateway status, entry points, and a fast health read.";
     case "channels":
@@ -180,6 +195,8 @@ export function subtitleForTab(tab: Tab) {
       return "Gateway snapshots, events, and manual RPC calls.";
     case "logs":
       return "Live tail of the gateway file logs.";
+    case "viz":
+      return "v2.2 Multi-Agent Visualization components.";
     default:
       return "";
   }
