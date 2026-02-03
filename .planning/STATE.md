@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 ## Current Position
 
 Phase: 27.1 (A2A Conversation Visibility) -- INSERTED
-Plan: 01 of 3
-Status: In progress
-Last activity: 2026-02-03 -- Completed 27.1-01-PLAN.md (backend event emission)
+Plan: 03 of 3
+Status: Phase complete
+Last activity: 2026-02-03 -- Completed 27.1-03-PLAN.md (A2A conversation rendering)
 
 Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2) | [####################] 100% (v2.3)
 
@@ -32,8 +32,8 @@ Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2
 
 **Velocity (v2.3):**
 
-- Plans completed: 4 (phase 26 + 27-01 + 27-02 + 27.1-01)
-- Duration: 15 min total
+- Plans completed: 7 (phase 26 + 27-01 + 27-02 + 27.1-01 + 27.1-02 + 27.1-03)
+- Duration: 21 min total
 
 ## Accumulated Context
 
@@ -64,6 +64,9 @@ v2.3 decisions:
 - [27.1-02] A2AConversation type with ordered turns array (distinct from session conversations)
 - [27.1-02] sessionA2ALinks computed signal maps sessionKey to conversationIds for cross-referencing
 - [27.1-02] Immutable Map pattern for a2aConversations signal (new Map on every mutation)
+- [27.1-03] Left/right chat bubble alignment for requester vs target agents (chat app convention)
+- [27.1-03] A2A badge click uses stopPropagation for drill-down routing (dual-purpose session cards)
+- [27.1-03] Shared userScrolledUp flag across conversation views (consistent auto-scroll pattern)
 
 ### Pending Todos
 
@@ -82,9 +85,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-03T23:03:18Z
+Last session: 2026-02-03T23:15:24Z
 Milestone: v2.3 Live Agent Dashboard - Phase 27.1 (A2A Conversation Visibility)
-Stopped at: Completed 27.1-01-PLAN.md -- backend A2A event emission
+Stopped at: Completed 27.1-03-PLAN.md -- Phase 27.1 complete
 Resume file: None
 
 ---
@@ -98,3 +101,6 @@ _Phase 27 plan 01 complete: 2026-02-03_
 _Phase 27 plan 02 complete: 2026-02-03_
 _v2.3 milestone complete: 2026-02-03_
 _Phase 27.1 plan 01 complete: 2026-02-03_
+_Phase 27.1 plan 02 complete: 2026-02-03_
+_Phase 27.1 plan 03 complete: 2026-02-03_
+_Phase 27.1 complete: 2026-02-03_
