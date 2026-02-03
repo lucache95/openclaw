@@ -28,6 +28,7 @@ import {
   ChatHistoryParamsSchema,
   type ChatInjectParams,
   ChatInjectParamsSchema,
+  ChatReplayParamsSchema,
   ChatSendParamsSchema,
   type ConfigApplyParams,
   ConfigApplyParamsSchema,
@@ -314,6 +315,7 @@ export const validateChatHistoryParams = ajv.compile(ChatHistoryParamsSchema);
 export const validateChatSendParams = ajv.compile(ChatSendParamsSchema);
 export const validateChatAbortParams = ajv.compile<ChatAbortParams>(ChatAbortParamsSchema);
 export const validateChatInjectParams = ajv.compile<ChatInjectParams>(ChatInjectParamsSchema);
+export const validateChatReplayParams = ajv.compile(ChatReplayParamsSchema);
 export const validateChatEvent = ajv.compile(ChatEventSchema);
 export const validateUpdateRunParams = ajv.compile<UpdateRunParams>(UpdateRunParamsSchema);
 export const validateWebLoginStartParams =
@@ -427,6 +429,7 @@ export {
   ChatHistoryParamsSchema,
   ChatSendParamsSchema,
   ChatInjectParamsSchema,
+  ChatReplayParamsSchema,
   UpdateRunParamsSchema,
   TickEventSchema,
   ShutdownEventSchema,

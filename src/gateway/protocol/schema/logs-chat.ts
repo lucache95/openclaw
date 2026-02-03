@@ -61,6 +61,15 @@ export const ChatInjectParamsSchema = Type.Object(
   { additionalProperties: false },
 );
 
+export const ChatReplayParamsSchema = Type.Object(
+  {
+    sessionKey: NonEmptyString,
+    lastSeq: Type.Integer({ minimum: 0 }),
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 1000 })),
+  },
+  { additionalProperties: false },
+);
+
 export const ChatEventSchema = Type.Object(
   {
     runId: NonEmptyString,
