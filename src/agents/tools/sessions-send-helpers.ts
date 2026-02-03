@@ -164,3 +164,75 @@ export function resolvePingPongTurns(cfg?: OpenClawConfig) {
   const rounded = Math.floor(raw);
   return Math.max(0, Math.min(MAX_PING_PONG_TURNS, rounded));
 }
+
+// --- Flow direction validation ---
+
+/**
+ * Agent hierarchy levels for unidirectional flow enforcement.
+ * Higher number = higher in hierarchy. Agents cannot send to agents at a higher level.
+ * Ethos (orchestrator) = 3, GSD (planner) = 2, all others (workers) = 1.
+ */
+const AGENT_HIERARCHY: Record<string, number> = {
+  ethos: 3,
+  gsd: 2,
+};
+const DEFAULT_HIERARCHY_LEVEL = 1;
+
+function getAgentHierarchyLevel(agentId: string): number {
+  const normalized = agentId.toLowerCase().trim();
+  return AGENT_HIERARCHY[normalized] ?? DEFAULT_HIERARCHY_LEVEL;
+}
+
+export type FlowValidationResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Validate that the request flow is unidirectional (higher -> lower or same level).
+ * Ethos (level 3) can send to anyone.
+ * GSD (level 2) can send to workers (level 1) and other level 2 agents, but NOT to Ethos.
+ * Workers (level 1) can send to other workers, but NOT to GSD or Ethos.
+ *
+ * Same-level sends are allowed (e.g. worker-to-worker) since they don't create
+ * upward dependency chains.
+ */
+export function validateFlowDirection(
+  requesterAgentId: string,
+  targetAgentId: string,
+): FlowValidationResult {
+  const requesterLevel = getAgentHierarchyLevel(requesterAgentId);
+  const targetLevel = getAgentHierarchyLevel(targetAgentId);
+
+  if (targetLevel > requesterLevel) {
+    return {
+      ok: false,
+      error: `Reverse flow forbidden: ${requesterAgentId} (level ${requesterLevel}) cannot send to ${targetAgentId} (level ${targetLevel}). Flow must be unidirectional (Ethos -> GSD -> Workers).`,
+    };
+  }
+
+  return { ok: true };
+}
+
+// --- Task-aware timeout resolution ---
+
+const SIMPLE_TIMEOUT_MS = 30_000;
+const COMPLEX_TIMEOUT_MS = 300_000;
+
+/**
+ * Resolve timeout based on task complexity.
+ * Simple tasks (default): 30 seconds.
+ * Complex reasoning tasks: 5 minutes.
+ * Explicit timeoutSeconds from the caller overrides the reasoning-based default.
+ */
+export function resolveTaskTimeout(params: {
+  reasoning?: boolean;
+  explicitTimeoutSeconds?: number;
+}): number {
+  // Explicit timeout always wins
+  if (
+    typeof params.explicitTimeoutSeconds === "number" &&
+    Number.isFinite(params.explicitTimeoutSeconds) &&
+    params.explicitTimeoutSeconds > 0
+  ) {
+    return Math.floor(params.explicitTimeoutSeconds) * 1000;
+  }
+  return params.reasoning ? COMPLEX_TIMEOUT_MS : SIMPLE_TIMEOUT_MS;
+}
