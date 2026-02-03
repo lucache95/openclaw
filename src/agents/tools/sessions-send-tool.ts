@@ -23,7 +23,12 @@ import {
   resolveSessionReference,
   stripToolMessages,
 } from "./sessions-helpers.js";
-import { buildAgentToAgentMessageContext, resolvePingPongTurns } from "./sessions-send-helpers.js";
+import {
+  buildAgentToAgentMessageContext,
+  resolvePingPongTurns,
+  resolveTaskTimeout,
+  validateFlowDirection,
+} from "./sessions-send-helpers.js";
 import { runSessionsSendA2AFlow } from "./sessions-send-tool.a2a.js";
 
 const SessionsSendToolSchema = Type.Object({
@@ -32,6 +37,7 @@ const SessionsSendToolSchema = Type.Object({
   agentId: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
   message: Type.String(),
   timeoutSeconds: Type.Optional(Type.Number({ minimum: 0 })),
+  reasoning: Type.Optional(Type.Boolean()),
 });
 
 export function createSessionsSendTool(opts?: {
@@ -216,11 +222,13 @@ export function createSessionsSendTool(opts?: {
           });
         }
       }
-      const timeoutSeconds =
+      const reasoning = params.reasoning === true;
+      const explicitTimeoutSeconds =
         typeof params.timeoutSeconds === "number" && Number.isFinite(params.timeoutSeconds)
           ? Math.max(0, Math.floor(params.timeoutSeconds))
-          : 30;
-      const timeoutMs = timeoutSeconds * 1000;
+          : undefined;
+      const timeoutMs = resolveTaskTimeout({ reasoning, explicitTimeoutSeconds });
+      const timeoutSeconds = Math.floor(timeoutMs / 1000);
       const announceTimeoutMs = timeoutSeconds === 0 ? 30_000 : timeoutMs;
       const idempotencyKey = crypto.randomUUID();
       let runId: string = idempotencyKey;
@@ -242,6 +250,17 @@ export function createSessionsSendTool(opts?: {
             runId: crypto.randomUUID(),
             status: "forbidden",
             error: "Agent-to-agent messaging denied by tools.agentToAgent.allow.",
+            sessionKey: displayKey,
+          });
+        }
+
+        // Enforce unidirectional flow: higher-level agents cannot be called by lower-level agents
+        const flowCheck = validateFlowDirection(requesterAgentId, targetAgentId);
+        if (!flowCheck.ok) {
+          return jsonResult({
+            runId: crypto.randomUUID(),
+            status: "forbidden",
+            error: flowCheck.error,
             sessionKey: displayKey,
           });
         }
