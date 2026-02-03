@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
 import {
   clearAgentRunContext,
   emitAgentEvent,
@@ -6,6 +6,7 @@ import {
   onAgentEvent,
   registerAgentRunContext,
   resetAgentRunContextForTest,
+  type AgentEventPayload,
 } from "./agent-events.js";
 
 describe("agent-events sequencing", () => {
@@ -60,5 +61,74 @@ describe("agent-events sequencing", () => {
     stop();
 
     expect(phases).toEqual(["start", "end"]);
+  });
+});
+
+describe("agent-events spawnedBy context", () => {
+  afterEach(() => {
+    resetAgentRunContextForTest();
+  });
+
+  test("registers spawnedBy in run context", () => {
+    registerAgentRunContext("spawn-1", {
+      sessionKey: "agent:coder:subagent:abc",
+      spawnedBy: "agent:ethos:main",
+    });
+    const ctx = getAgentRunContext("spawn-1");
+    expect(ctx?.spawnedBy).toBe("agent:ethos:main");
+    expect(ctx?.sessionKey).toBe("agent:coder:subagent:abc");
+  });
+
+  test("preserves spawnedBy when updating existing context", () => {
+    registerAgentRunContext("spawn-2", {
+      sessionKey: "agent:gsd:subagent:xyz",
+      spawnedBy: "agent:ethos:main",
+    });
+    // Update with no spawnedBy -- should keep original
+    registerAgentRunContext("spawn-2", {
+      sessionKey: "agent:gsd:subagent:xyz",
+    });
+    const ctx = getAgentRunContext("spawn-2");
+    expect(ctx?.spawnedBy).toBe("agent:ethos:main");
+  });
+
+  test("emits lifecycle event with session key from context", () => {
+    const events: AgentEventPayload[] = [];
+    const unsub = onAgentEvent((evt) => events.push(evt));
+    registerAgentRunContext("spawn-3", {
+      sessionKey: "agent:coder:subagent:def",
+      spawnedBy: "agent:gsd:main",
+    });
+    emitAgentEvent({
+      runId: "spawn-3",
+      stream: "lifecycle",
+      data: { phase: "start" },
+    });
+    unsub();
+    expect(events).toHaveLength(1);
+    expect(events[0].sessionKey).toBe("agent:coder:subagent:def");
+    expect(events[0].stream).toBe("lifecycle");
+    expect(events[0].data.phase).toBe("start");
+  });
+
+  test("clears context on clearAgentRunContext", () => {
+    registerAgentRunContext("spawn-4", {
+      sessionKey: "agent:qa:subagent:ghi",
+      spawnedBy: "agent:gsd:main",
+    });
+    clearAgentRunContext("spawn-4");
+    expect(getAgentRunContext("spawn-4")).toBeUndefined();
+  });
+
+  test("emits monotonically increasing sequence numbers per run", () => {
+    const events: AgentEventPayload[] = [];
+    const unsub = onAgentEvent((evt) => {
+      if (evt.runId === "spawn-5") events.push(evt);
+    });
+    emitAgentEvent({ runId: "spawn-5", stream: "lifecycle", data: { phase: "start" } });
+    emitAgentEvent({ runId: "spawn-5", stream: "assistant", data: { text: "hello" } });
+    emitAgentEvent({ runId: "spawn-5", stream: "lifecycle", data: { phase: "end" } });
+    unsub();
+    expect(events.map((e) => e.seq)).toEqual([1, 2, 3]);
   });
 });
