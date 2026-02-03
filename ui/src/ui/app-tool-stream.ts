@@ -11,6 +11,14 @@ export type AgentEventPayload = {
   ts: number;
   sessionKey?: string;
   data: Record<string, unknown>;
+  spawnedBy?: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    model: string;
+    tier: "local" | "cheap" | "quality";
+    costUsd: number;
+  };
 };
 
 export type ToolStreamEntry = {
