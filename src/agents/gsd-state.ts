@@ -126,3 +126,54 @@ export function listGsdStates(): Array<{ sessionId: string; state: GsdWorkflowSt
   }
   return results;
 }
+
+/**
+ * Valid phase transitions in the GSD workflow.
+ * Each phase can only transition to the next sequential phase.
+ */
+export const PHASE_ORDER: readonly GsdPhase[] = [
+  "questioning",
+  "research",
+  "requirements",
+  "roadmap",
+  "planning",
+  "execution",
+  "complete",
+] as const;
+
+/**
+ * Transition the workflow to the next phase.
+ * Returns the updated state with new phase and checkpoint.
+ * Throws if the transition is invalid (skipping phases or going backward).
+ */
+export function transitionPhase(
+  state: GsdWorkflowState,
+  toPhase: GsdPhase,
+  description: string,
+): GsdWorkflowState {
+  const currentIdx = PHASE_ORDER.indexOf(state.currentPhase);
+  const targetIdx = PHASE_ORDER.indexOf(toPhase);
+
+  if (targetIdx <= currentIdx) {
+    throw new Error(
+      `Invalid phase transition: cannot go from "${state.currentPhase}" to "${toPhase}" (backward or same)`,
+    );
+  }
+  if (targetIdx > currentIdx + 1) {
+    throw new Error(
+      `Invalid phase transition: cannot skip from "${state.currentPhase}" to "${toPhase}"`,
+    );
+  }
+
+  const now = Date.now();
+  return {
+    ...state,
+    currentPhase: toPhase,
+    updatedAt: now,
+    checkpoint: {
+      phase: toPhase,
+      timestamp: now,
+      description,
+    },
+  };
+}
