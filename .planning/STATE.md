@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-03)
 ## Current Position
 
 Phase: 27.1 (A2A Conversation Visibility) -- INSERTED
-Plan: Not planned yet
-Status: Inserted phase -- needs planning
-Last activity: 2026-02-03 -- Phase 27.1 inserted for A2A conversation visibility gap
+Plan: 02 of 3
+Status: In progress
+Last activity: 2026-02-03 -- Completed 27.1-02-PLAN.md (UI state layer)
 
 Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2) | [####################] 100% (v2.3)
 
@@ -57,6 +57,9 @@ v2.3 decisions:
 - [27-02] Auto-scroll with module-level userScrolledUp flag (no signal overhead for ephemeral state)
 - [27-02] streamText property on message-stream with nullish coalescing fallback for backward compatibility
 - [27-02] Clickable div wrapper on session cards for drill-down (separation of concerns)
+- [27.1-02] A2AConversation type with ordered turns array (distinct from session conversations)
+- [27.1-02] sessionA2ALinks computed signal maps sessionKey to conversationIds for cross-referencing
+- [27.1-02] Immutable Map pattern for a2aConversations signal (new Map on every mutation)
 
 ### Pending Todos
 
@@ -75,9 +78,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-03T21:57:24Z
-Milestone: v2.3 Live Agent Dashboard (complete)
-Stopped at: Completed 27-02-PLAN.md -- v2.3 milestone complete
+Last session: 2026-02-03T23:05:42Z
+Milestone: v2.3 Live Agent Dashboard - Phase 27.1 (A2A Conversation Visibility)
+Stopped at: Completed 27.1-02-PLAN.md -- UI state layer for A2A conversations
 Resume file: None
 
 ---
@@ -90,3 +93,4 @@ _Phase 26 plan 01 complete: 2026-02-03_
 _Phase 27 plan 01 complete: 2026-02-03_
 _Phase 27 plan 02 complete: 2026-02-03_
 _v2.3 milestone complete: 2026-02-03_
+_Phase 27.1 plan 02 complete: 2026-02-03_
