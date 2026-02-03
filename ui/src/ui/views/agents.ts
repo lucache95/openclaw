@@ -1,9 +1,18 @@
 import { html, nothing } from "lit";
+import { signal } from "@lit-labs/signals";
 import { agentSessions } from "../state/metrics";
 import { connectionStatus } from "../state/connection";
+import { renderConversation } from "./conversation-view";
 import "../components/agent-session-card";
 
+/** Currently selected session key for conversation drill-down. */
+const selectedSession = signal<string | null>(null);
+
 export function renderAgents() {
+  const selected = selectedSession.get();
+  if (selected) {
+    return renderConversation(selected, () => selectedSession.set(null));
+  }
   const status = connectionStatus.get();
 
   if (status === "disconnected") {
@@ -39,16 +48,21 @@ export function renderAgents() {
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;">
         ${sessions.map(
           (s) => html`
-            <agent-session-card
-              sessionKey=${s.sessionKey}
-              agentId=${s.agentId}
-              task=${s.task}
-              status=${s.status}
-              spawnedBy=${s.spawnedBy ?? ""}
-              .startedAt=${s.startedAt}
-              .endedAt=${s.endedAt ?? 0}
-              currentStep=${s.currentStep ?? ""}
-            ></agent-session-card>
+            <div
+              @click=${() => selectedSession.set(s.sessionKey)}
+              style="cursor:pointer;"
+            >
+              <agent-session-card
+                sessionKey=${s.sessionKey}
+                agentId=${s.agentId}
+                task=${s.task}
+                status=${s.status}
+                spawnedBy=${s.spawnedBy ?? ""}
+                .startedAt=${s.startedAt}
+                .endedAt=${s.endedAt ?? 0}
+                currentStep=${s.currentStep ?? ""}
+              ></agent-session-card>
+            </div>
           `,
         )}
       </div>

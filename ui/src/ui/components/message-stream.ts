@@ -125,9 +125,10 @@ export class MessageStreamElement extends SignalWatcher(LitElement) {
 
   @property() agentId = "";
   @property({ type: Number }) startedAt = 0;
+  @property({ attribute: false }) streamText: string | null = null;
 
   render() {
-    const stream = chatStream.get();
+    const stream = this.streamText ?? chatStream.get();
     const hasContent = stream !== null && stream.trim().length > 0;
     const timestamp = this.startedAt
       ? new Date(this.startedAt).toLocaleTimeString([], {
