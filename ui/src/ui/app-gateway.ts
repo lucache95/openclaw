@@ -22,6 +22,7 @@ import {
 import { loadNodes } from "./controllers/nodes";
 import { loadSessions } from "./controllers/sessions";
 import { GatewayBrowserClient } from "./gateway";
+import { setConnectionStatus } from "./state/connection";
 
 type GatewayHost = {
   settings: UiSettings;
@@ -108,6 +109,7 @@ export function connectGateway(host: GatewayHost) {
   host.lastError = null;
   host.hello = null;
   host.connected = false;
+  setConnectionStatus('disconnected');
   host.execApprovalQueue = [];
   host.execApprovalError = null;
 
@@ -120,6 +122,7 @@ export function connectGateway(host: GatewayHost) {
     mode: "webchat",
     onHello: (hello) => {
       host.connected = true;
+      setConnectionStatus('connected');
       host.lastError = null;
       host.hello = hello;
       applySnapshot(host, hello);
@@ -137,6 +140,13 @@ export function connectGateway(host: GatewayHost) {
     },
     onClose: ({ code, reason }) => {
       host.connected = false;
+      // Normal closure or deliberate stop = truly disconnected (no auto-reconnect)
+      // Otherwise the client will auto-reconnect
+      if (code === 1000 || code === 1005) {
+        setConnectionStatus('disconnected');
+      } else {
+        setConnectionStatus('reconnecting');
+      }
       // Code 1012 = Service Restart (expected during config saves, don't show as error)
       if (code !== 1012) {
         host.lastError = `disconnected (${code}): ${reason || "no reason"}`;
