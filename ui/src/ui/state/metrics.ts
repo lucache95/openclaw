@@ -29,12 +29,32 @@ export type ConversationMessage = {
   role: "assistant" | "system" | "tool";
 };
 
+export type A2ATurnMessage = {
+  conversationId: string;
+  fromAgent: string;
+  toAgent: string;
+  turn: number;
+  maxTurns: number;
+  text: string;
+  timestamp: number;
+  sessionKey?: string;
+};
+
+export type A2AConversation = {
+  conversationId: string;
+  agents: [string, string];
+  turns: A2ATurnMessage[];
+  startedAt: number;
+  status: "active" | "complete";
+};
+
 // --- Signals ---
 
 export const agentSessions = signal<Map<string, SessionCardData>>(new Map());
 export const agentCosts = signal<Map<string, UsageEntry[]>>(new Map());
 export const sessionConversations = signal<Map<string, ConversationMessage[]>>(new Map());
 export const sessionStreams = signal<Map<string, { agentId: string; text: string }>>(new Map());
+export const a2aConversations = signal<Map<string, A2AConversation>>(new Map());
 
 // --- Computed ---
 
@@ -50,6 +70,22 @@ export const totalCost = computed(() => {
     for (const e of entries) sum += e.costUsd;
   }
   return sum;
+});
+
+export const sessionA2ALinks = computed(() => {
+  const links = new Map<string, string[]>();
+  for (const [convId, conv] of a2aConversations.get()) {
+    for (const turn of conv.turns) {
+      if (turn.sessionKey) {
+        const existing = links.get(turn.sessionKey) ?? [];
+        if (!existing.includes(convId)) {
+          existing.push(convId);
+          links.set(turn.sessionKey, existing);
+        }
+      }
+    }
+  }
+  return links;
 });
 
 // --- Mutators ---
@@ -196,10 +232,48 @@ export function finalizeSessionStream(sessionKey: string): void {
   clearSessionStream(sessionKey);
 }
 
+// --- A2A conversation mutators ---
+
+/** Add a turn to an A2A conversation. Creates the conversation if it doesn't exist. */
+export function pushA2ATurn(turn: A2ATurnMessage): void {
+  const next = new Map(a2aConversations.get());
+  const existing = next.get(turn.conversationId);
+  if (existing) {
+    const updatedTurns = [...existing.turns, turn];
+    next.set(turn.conversationId, {
+      ...existing,
+      turns: updatedTurns,
+    });
+  } else {
+    next.set(turn.conversationId, {
+      conversationId: turn.conversationId,
+      agents: [turn.fromAgent, turn.toAgent],
+      turns: [turn],
+      startedAt: turn.timestamp,
+      status: "active",
+    });
+  }
+  a2aConversations.set(next);
+}
+
+/** Mark an A2A conversation as complete. */
+export function finalizeA2AConversation(conversationId: string): void {
+  const next = new Map(a2aConversations.get());
+  const existing = next.get(conversationId);
+  if (existing) {
+    next.set(conversationId, {
+      ...existing,
+      status: "complete",
+    });
+    a2aConversations.set(next);
+  }
+}
+
 /** Clear all metrics state (for testing/cleanup). */
 export function resetMetrics(): void {
   agentSessions.set(new Map());
   agentCosts.set(new Map());
   sessionConversations.set(new Map());
   sessionStreams.set(new Map());
+  a2aConversations.set(new Map());
 }
