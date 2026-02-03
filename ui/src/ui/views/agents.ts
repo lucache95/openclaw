@@ -26,14 +26,22 @@ import {
   formatNextRun,
 } from "../presenter.ts";
 import { connectionStatus } from "../state/connection.ts";
-import { agentSessions } from "../state/metrics.ts";
-import { renderConversation } from "./conversation-view.ts";
+import { agentSessions, sessionA2ALinks, a2aConversations } from "../state/metrics.ts";
+import { renderConversation, renderA2AConversation } from "./conversation-view.ts";
 
 /** Currently selected session key for conversation drill-down. */
 const selectedSession = signal<string | null>(null);
 
+/** Currently selected A2A conversation for drill-down. */
+const selectedA2AConversation = signal<string | null>(null);
+
 /** Live agent sessions view with conversation drill-down. */
 export function renderAgentSessions() {
+  const selectedA2A = selectedA2AConversation.get();
+  if (selectedA2A) {
+    return renderA2AConversation(selectedA2A, () => selectedA2AConversation.set(null));
+  }
+
   const selected = selectedSession.get();
   if (selected) {
     return renderConversation(selected, () => selectedSession.set(null));
@@ -75,7 +83,7 @@ export function renderAgentSessions() {
           (s) => html`
             <div
               @click=${() => selectedSession.set(s.sessionKey)}
-              style="cursor:pointer;"
+              style="cursor:pointer;position:relative;"
             >
               <agent-session-card
                 sessionKey=${s.sessionKey}
@@ -87,6 +95,32 @@ export function renderAgentSessions() {
                 .endedAt=${s.endedAt ?? 0}
                 currentStep=${s.currentStep ?? ""}
               ></agent-session-card>
+              ${(() => {
+                const links = sessionA2ALinks.get();
+                const convIds = links.get(s.sessionKey);
+                if (!convIds || convIds.length === 0) return nothing;
+                return html`
+                  <div
+                    @click=${(e: Event) => {
+                      e.stopPropagation();
+                      selectedA2AConversation.set(convIds[0]);
+                    }}
+                    style="
+                      position:absolute;
+                      top:6px;
+                      right:6px;
+                      font-size:0.65rem;
+                      padding:2px 6px;
+                      border-radius:8px;
+                      background:rgba(59,130,246,0.15);
+                      color:#3b82f6;
+                      cursor:pointer;
+                      font-weight:600;
+                    "
+                    title="View A2A conversation"
+                  >A2A</div>
+                `;
+              })()}
             </div>
           `,
         )}
