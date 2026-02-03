@@ -1,10 +1,12 @@
+import type { AgentEventPayload } from "../app-tool-stream";
 import {
   updateSessionFromEvent,
   resetMetrics,
   setSessionStream,
   finalizeSessionStream,
+  pushA2ATurn,
+  finalizeA2AConversation,
 } from "../state/metrics";
-import type { AgentEventPayload } from "../app-tool-stream";
 
 /**
  * Bridges gateway agent events to the metrics signals layer.
@@ -37,6 +39,25 @@ export class AgentsController {
       const phase = payload.data?.phase as string | undefined;
       if (phase === "end" || phase === "error") {
         finalizeSessionStream(sessionKey);
+      }
+    } else if (payload.stream === "a2a") {
+      const data = payload.data;
+      const conversationId = data?.conversationId as string | undefined;
+      if (!conversationId) return;
+
+      if (data.phase === "turn") {
+        pushA2ATurn({
+          conversationId,
+          fromAgent: (data.fromAgent as string) ?? "unknown",
+          toAgent: (data.toAgent as string) ?? "unknown",
+          turn: (data.turn as number) ?? 0,
+          maxTurns: (data.maxTurns as number) ?? 0,
+          text: (data.text as string) ?? "",
+          timestamp: Date.now(),
+          sessionKey,
+        });
+      } else if (data.phase === "complete") {
+        finalizeA2AConversation(conversationId);
       }
     }
   }
