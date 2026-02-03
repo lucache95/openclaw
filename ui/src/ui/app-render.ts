@@ -87,6 +87,8 @@ import { renderNodes } from "./views/nodes";
 import { renderOverview } from "./views/overview";
 import { renderSessions } from "./views/sessions";
 import { renderSkills } from "./views/skills";
+import { renderAgents } from "./views/agents";
+import { renderVizDemo } from "./views/viz-demo";
 import "./components/connection-indicator";
 
 const AVATAR_DATA_RE = /^data:/i;
@@ -600,6 +602,8 @@ export function renderApp(state: AppViewState) {
               })
             : nothing
         }
+        ${state.tab === "agents" ? renderAgents() : nothing}
+        ${state.tab === "viz" ? renderVizDemo() : nothing}
       </main>
       ${renderExecApprovalPrompt(state)}
       ${renderGatewayUrlConfirmation(state)}
