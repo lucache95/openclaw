@@ -1,11 +1,71 @@
 import DOMPurify from "dompurify";
+import hljs from "highlight.js/lib/core";
+import typescript from "highlight.js/lib/languages/typescript";
+import javascript from "highlight.js/lib/languages/javascript";
+import python from "highlight.js/lib/languages/python";
+import bash from "highlight.js/lib/languages/bash";
+import json from "highlight.js/lib/languages/json";
+import css from "highlight.js/lib/languages/css";
+import xml from "highlight.js/lib/languages/xml";
+import markdown from "highlight.js/lib/languages/markdown";
+import yaml from "highlight.js/lib/languages/yaml";
+import sql from "highlight.js/lib/languages/sql";
+import go from "highlight.js/lib/languages/go";
+import rust from "highlight.js/lib/languages/rust";
+import diff from "highlight.js/lib/languages/diff";
 import { marked } from "marked";
 import { truncateText } from "./format";
+
+// Register highlight.js languages (common set, keeps bundle small)
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("ts", typescript);
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("js", javascript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("py", python);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("sh", bash);
+hljs.registerLanguage("shell", bash);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("css", css);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("markdown", markdown);
+hljs.registerLanguage("md", markdown);
+hljs.registerLanguage("yaml", yaml);
+hljs.registerLanguage("yml", yaml);
+hljs.registerLanguage("sql", sql);
+hljs.registerLanguage("go", go);
+hljs.registerLanguage("rust", rust);
+hljs.registerLanguage("rs", rust);
+hljs.registerLanguage("diff", diff);
+
+// Custom renderer for syntax-highlighted code blocks
+marked.use({
+  renderer: {
+    code({ text, lang }: { text: string; lang?: string }) {
+      let highlighted: string;
+      if (lang && hljs.getLanguage(lang)) {
+        try {
+          highlighted = hljs.highlight(text, { language: lang }).value;
+        } catch {
+          highlighted = escapeHtml(text);
+        }
+      } else {
+        // No auto-detect to keep it fast -- just escape
+        highlighted = escapeHtml(text);
+      }
+      const langLabel = lang
+        ? `<span class="code-lang">${escapeHtml(lang)}</span>`
+        : "";
+      return `<pre class="code-block">${langLabel}<code class="hljs">${highlighted}</code></pre>`;
+    },
+  },
+});
 
 marked.setOptions({
   gfm: true,
   breaks: true,
-  mangle: false,
 });
 
 const allowedTags = [
@@ -26,6 +86,7 @@ const allowedTags = [
   "ol",
   "p",
   "pre",
+  "span",
   "strong",
   "table",
   "tbody",
