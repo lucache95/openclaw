@@ -69,6 +69,7 @@ export async function runReplyAgent(params: {
     minChars: number;
     maxChars: number;
     breakPreference: "paragraph" | "newline" | "sentence";
+    flushOnParagraph?: boolean;
   };
   resolvedBlockStreamingBreak: "text_end" | "message_end";
   sessionCtx: TemplateContext;

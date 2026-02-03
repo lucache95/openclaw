@@ -13,6 +13,15 @@ import {
 import { createOpenAiEmbeddingProvider, type OpenAiEmbeddingClient } from "./embeddings-openai.js";
 import { importNodeLlamaCpp } from "./node-llama.js";
 
+function sanitizeAndNormalizeEmbedding(vec: number[]): number[] {
+  const sanitized = vec.map((value) => (Number.isFinite(value) ? value : 0));
+  const magnitude = Math.sqrt(sanitized.reduce((sum, value) => sum + value * value, 0));
+  if (magnitude < 1e-10) {
+    return sanitized;
+  }
+  return sanitized.map((value) => value / magnitude);
+}
+
 export type { GeminiEmbeddingClient } from "./embeddings-gemini.js";
 export type { OllamaEmbeddingClient } from "./embeddings-ollama.js";
 export type { OpenAiEmbeddingClient } from "./embeddings-openai.js";
@@ -123,14 +132,14 @@ async function createLocalEmbeddingProvider(
     embedQuery: async (text) => {
       const ctx = await ensureContext();
       const embedding = await ctx.getEmbeddingFor(text);
-      return Array.from(embedding.vector);
+      return sanitizeAndNormalizeEmbedding(Array.from(embedding.vector));
     },
     embedBatch: async (texts) => {
       const ctx = await ensureContext();
       const embeddings = await Promise.all(
         texts.map(async (text) => {
           const embedding = await ctx.getEmbeddingFor(text);
-          return Array.from(embedding.vector);
+          return sanitizeAndNormalizeEmbedding(Array.from(embedding.vector));
         }),
       );
       return embeddings;

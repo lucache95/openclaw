@@ -5,9 +5,9 @@ import {
   type GatewayClientMode,
   type GatewayClientName,
 } from "../../../src/gateway/protocol/client-info.js";
-import { clearDeviceAuthToken, loadDeviceAuthToken, storeDeviceAuthToken } from "./device-auth";
-import { loadOrCreateDeviceIdentity, signDevicePayload } from "./device-identity";
-import { generateUUID } from "./uuid";
+import { clearDeviceAuthToken, loadDeviceAuthToken, storeDeviceAuthToken } from "./device-auth.ts";
+import { loadOrCreateDeviceIdentity, signDevicePayload } from "./device-identity.ts";
+import { generateUUID } from "./uuid.ts";
 
 export type GatewayEventFrame = {
   type: "event";
@@ -101,36 +101,44 @@ export class GatewayBrowserClient {
   }
 
   private connect() {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     this.ws = new WebSocket(this.opts.url);
-    this.ws.onopen = () => this.queueConnect();
-    this.ws.onmessage = (ev) => this.handleMessage(String(ev.data ?? ""));
-    this.ws.onclose = (ev) => {
+    this.ws.addEventListener("open", () => this.queueConnect());
+    this.ws.addEventListener("message", (ev) => this.handleMessage(String(ev.data ?? "")));
+    this.ws.addEventListener("close", (ev) => {
       const reason = String(ev.reason ?? "");
       this.ws = null;
       this.flushPending(new Error(`gateway closed (${ev.code}): ${reason}`));
       this.opts.onClose?.({ code: ev.code, reason });
       this.scheduleReconnect();
-    };
-    this.ws.onerror = () => {
+    });
+    this.ws.addEventListener("error", () => {
       // ignored; close handler will fire
-    };
+    });
   }
 
   private scheduleReconnect() {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     const delay = this.backoffMs;
     this.backoffMs = Math.min(this.backoffMs * 1.7, 15_000);
     window.setTimeout(() => this.connect(), delay);
   }
 
   private flushPending(err: Error) {
-    for (const [, p] of this.pending) p.reject(err);
+    for (const [, p] of this.pending) {
+      p.reject(err);
+    }
     this.pending.clear();
   }
 
   private async sendConnect() {
-    if (this.connectSent) return;
+    if (this.connectSent) {
+      return;
+    }
     this.connectSent = true;
     if (this.connectTimer !== null) {
       window.clearTimeout(this.connectTimer);
@@ -233,28 +241,32 @@ export class GatewayBrowserClient {
           void this.request("chat.replay", {
             sessionKey: this.activeSessionKey,
             lastSeq: this.lastChatSeq,
-          }).then((result: unknown) => {
-            const r = result as { messages: Array<{ seq: number }>; resumeSeq: number } | undefined;
-            if (r?.messages) {
-              for (const msg of r.messages) {
-                this.opts.onEvent?.({
-                  type: "event",
-                  event: "chat",
-                  payload: msg,
-                  seq: undefined,
+          })
+            .then((result: unknown) => {
+              const r = result as
+                | { messages: Array<{ seq: number }>; resumeSeq: number }
+                | undefined;
+              if (r?.messages) {
+                for (const msg of r.messages) {
+                  this.opts.onEvent?.({
+                    type: "event",
+                    event: "chat",
+                    payload: msg,
+                    seq: undefined,
+                  });
+                }
+                if (typeof r.resumeSeq === "number") {
+                  this.lastChatSeq = r.resumeSeq;
+                }
+                this.opts.onReplayComplete?.({
+                  messagesReplayed: r.messages.length,
+                  resumeSeq: r.resumeSeq,
                 });
               }
-              if (typeof r.resumeSeq === "number") {
-                this.lastChatSeq = r.resumeSeq;
-              }
-              this.opts.onReplayComplete?.({
-                messagesReplayed: r.messages.length,
-                resumeSeq: r.resumeSeq,
-              });
-            }
-          }).catch(() => {
-            // Replay failure is non-fatal
-          });
+            })
+            .catch(() => {
+              // Replay failure is non-fatal
+            });
         }
       })
       .catch(() => {
@@ -309,10 +321,15 @@ export class GatewayBrowserClient {
     if (frame.type === "res") {
       const res = parsed as GatewayResponseFrame;
       const pending = this.pending.get(res.id);
-      if (!pending) return;
+      if (!pending) {
+        return;
+      }
       this.pending.delete(res.id);
-      if (res.ok) pending.resolve(res.payload);
-      else pending.reject(new Error(res.error?.message ?? "request failed"));
+      if (res.ok) {
+        pending.resolve(res.payload);
+      } else {
+        pending.reject(new Error(res.error?.message ?? "request failed"));
+      }
       return;
     }
   }
@@ -333,7 +350,9 @@ export class GatewayBrowserClient {
   private queueConnect() {
     this.connectNonce = null;
     this.connectSent = false;
-    if (this.connectTimer !== null) window.clearTimeout(this.connectTimer);
+    if (this.connectTimer !== null) {
+      window.clearTimeout(this.connectTimer);
+    }
     this.connectTimer = window.setTimeout(() => {
       void this.sendConnect();
     }, 750);

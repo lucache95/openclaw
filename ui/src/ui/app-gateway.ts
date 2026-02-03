@@ -1,30 +1,35 @@
-import type { OpenClawApp } from "./app";
-import type { EventLogEntry } from "./app-events";
-import type { ExecApprovalRequest } from "./controllers/exec-approval";
-import type { GatewayEventFrame, GatewayHelloOk } from "./gateway";
-import type { Tab } from "./navigation";
-import type { UiSettings } from "./storage";
-import type { AgentsListResult, PresenceEntry, HealthSnapshot, StatusSummary } from "./types";
-import { CHAT_SESSIONS_ACTIVE_MINUTES, flushChatQueueForEvent } from "./app-chat";
-import { applySettings, loadCron, refreshActiveTab, setLastActiveSessionKey } from "./app-settings";
-import { handleAgentEvent, resetToolStream, type AgentEventPayload } from "./app-tool-stream";
-import { AgentsController } from "./controllers/agents-controller";
-import { loadAgents } from "./controllers/agents";
-import { loadAssistantIdentity } from "./controllers/assistant-identity";
-import { loadChatHistory } from "./controllers/chat";
-import { handleChatEvent, type ChatEventPayload } from "./controllers/chat";
-import { loadDevices } from "./controllers/devices";
+import type { EventLogEntry } from "./app-events.ts";
+import type { OpenClawApp } from "./app.ts";
+import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
+import type { GatewayEventFrame, GatewayHelloOk } from "./gateway.ts";
+import type { Tab } from "./navigation.ts";
+import type { UiSettings } from "./storage.ts";
+import type { AgentsListResult, PresenceEntry, HealthSnapshot, StatusSummary } from "./types.ts";
+import { CHAT_SESSIONS_ACTIVE_MINUTES, flushChatQueueForEvent } from "./app-chat.ts";
+import {
+  applySettings,
+  loadCron,
+  refreshActiveTab,
+  setLastActiveSessionKey,
+} from "./app-settings.ts";
+import { handleAgentEvent, resetToolStream, type AgentEventPayload } from "./app-tool-stream.ts";
+import { AgentsController } from "./controllers/agents-controller.ts";
+import { loadAgents } from "./controllers/agents.ts";
+import { loadAssistantIdentity } from "./controllers/assistant-identity.ts";
+import { loadChatHistory } from "./controllers/chat.ts";
+import { handleChatEvent, type ChatEventPayload } from "./controllers/chat.ts";
+import { loadDevices } from "./controllers/devices.ts";
 import {
   addExecApproval,
   parseExecApprovalRequested,
   parseExecApprovalResolved,
   removeExecApproval,
-} from "./controllers/exec-approval";
-import { loadNodes } from "./controllers/nodes";
-import { loadSessions } from "./controllers/sessions";
-import { GatewayBrowserClient } from "./gateway";
-import { setConnectionStatus } from "./state/connection";
-import { setChatStream, setChatMessages } from "./state/chat";
+} from "./controllers/exec-approval.ts";
+import { loadNodes } from "./controllers/nodes.ts";
+import { loadSessions } from "./controllers/sessions.ts";
+import { GatewayBrowserClient } from "./gateway.ts";
+import { setChatStream, setChatMessages } from "./state/chat.ts";
+import { setConnectionStatus } from "./state/connection.ts";
 
 const agentsController = new AgentsController();
 
@@ -69,8 +74,12 @@ function normalizeSessionKeyForDefaults(
 ): string {
   const raw = (value ?? "").trim();
   const mainSessionKey = defaults.mainSessionKey?.trim();
-  if (!mainSessionKey) return raw;
-  if (!raw) return mainSessionKey;
+  if (!mainSessionKey) {
+    return raw;
+  }
+  if (!raw) {
+    return mainSessionKey;
+  }
   const mainKey = defaults.mainKey?.trim() || "main";
   const defaultAgentId = defaults.defaultAgentId?.trim();
   const isAlias =
@@ -82,7 +91,9 @@ function normalizeSessionKeyForDefaults(
 }
 
 function applySessionDefaults(host: GatewayHost, defaults?: SessionDefaultsSnapshot) {
-  if (!defaults?.mainSessionKey) return;
+  if (!defaults?.mainSessionKey) {
+    return;
+  }
   const resolvedSessionKey = normalizeSessionKeyForDefaults(host.sessionKey, defaults);
   const resolvedSettingsSessionKey = normalizeSessionKeyForDefaults(
     host.settings.sessionKey,
@@ -113,7 +124,7 @@ export function connectGateway(host: GatewayHost) {
   host.lastError = null;
   host.hello = null;
   host.connected = false;
-  setConnectionStatus('disconnected');
+  setConnectionStatus("disconnected");
   host.execApprovalQueue = [];
   host.execApprovalError = null;
 
@@ -126,7 +137,7 @@ export function connectGateway(host: GatewayHost) {
     mode: "webchat",
     onHello: (hello) => {
       host.connected = true;
-      setConnectionStatus('connected');
+      setConnectionStatus("connected");
       host.lastError = null;
       host.hello = hello;
       applySnapshot(host, hello);
@@ -148,9 +159,9 @@ export function connectGateway(host: GatewayHost) {
       // Normal closure or deliberate stop = truly disconnected (no auto-reconnect)
       // Otherwise the client will auto-reconnect
       if (code === 1000 || code === 1005) {
-        setConnectionStatus('disconnected');
+        setConnectionStatus("disconnected");
       } else {
-        setConnectionStatus('reconnecting');
+        setConnectionStatus("reconnecting");
       }
       // Code 1012 = Service Restart (expected during config saves, don't show as error)
       if (code !== 1012) {
@@ -183,7 +194,9 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
   }
 
   if (evt.event === "agent") {
-    if (host.onboarding) return;
+    if (host.onboarding) {
+      return;
+    }
     agentsController.handleEvent(evt.payload as AgentEventPayload | undefined);
     handleAgentEvent(
       host as unknown as Parameters<typeof handleAgentEvent>[0],
