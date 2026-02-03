@@ -82,6 +82,8 @@ const BASE_METHODS = [
   "chat.history",
   "chat.abort",
   "chat.send",
+  "chat.inject",
+  "chat.replay",
 ];
 
 export function listGatewayMethods(): string[] {

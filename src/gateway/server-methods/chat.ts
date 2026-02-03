@@ -31,6 +31,7 @@ import {
   validateChatAbortParams,
   validateChatHistoryParams,
   validateChatInjectParams,
+  validateChatReplayParams,
   validateChatSendParams,
 } from "../protocol/index.js";
 import { getMaxChatHistoryMessagesBytes } from "../server-constants.js";
@@ -692,5 +693,30 @@ export const chatHandlers: GatewayRequestHandlers = {
     context.nodeSendToSession(p.sessionKey, "chat", chatPayload);
 
     respond(true, { ok: true, messageId });
+  },
+  "chat.replay": ({ params, respond, context }) => {
+    if (!validateChatReplayParams(params)) {
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.INVALID_REQUEST,
+          `invalid chat.replay params: ${formatValidationErrors(validateChatReplayParams.errors)}`,
+        ),
+      );
+      return;
+    }
+    const { sessionKey, lastSeq, limit } = params as {
+      sessionKey: string;
+      lastSeq: number;
+      limit?: number;
+    };
+    const messages = context.chatPersistence.replay(
+      sessionKey,
+      lastSeq,
+      Math.min(limit ?? 500, 1000),
+    );
+    const resumeSeq = messages.length > 0 ? messages[messages.length - 1]!.seq : lastSeq;
+    respond(true, { sessionKey, messages, resumeSeq });
   },
 };

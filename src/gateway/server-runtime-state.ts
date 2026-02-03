@@ -1,4 +1,5 @@
 import type { Server as HttpServer } from "node:http";
+import nodePath from "node:path";
 import { WebSocketServer } from "ws";
 import type { CliDeps } from "../cli/deps.js";
 import type { createSubsystemLogger } from "../logging/subsystem.js";
@@ -12,6 +13,8 @@ import type { GatewayTlsRuntime } from "./server/tls.js";
 import type { GatewayWsClient } from "./server/ws-types.js";
 import { CANVAS_HOST_PATH } from "../canvas-host/a2ui.js";
 import { type CanvasHostHandler, createCanvasHostHandler } from "../canvas-host/server.js";
+import { CONFIG_DIR } from "../utils.js";
+import { createChatPersistence } from "./chat-persistence.js";
 import { resolveGatewayListenHosts } from "./net.js";
 import { createGatewayBroadcaster } from "./server-broadcast.js";
 import { type ChatRunEntry, createChatRunState } from "./server-chat.js";
@@ -69,6 +72,7 @@ export async function createGatewayRuntimeState(params: {
     sessionKey?: string,
   ) => ChatRunEntry | undefined;
   chatAbortControllers: Map<string, ChatAbortControllerEntry>;
+  chatPersistence: ReturnType<typeof createChatPersistence>;
 }> {
   let canvasHost: CanvasHostHandler | null = null;
   if (params.canvasHostEnabled) {
@@ -161,6 +165,7 @@ export async function createGatewayRuntimeState(params: {
   const addChatRun = chatRunRegistry.add;
   const removeChatRun = chatRunRegistry.remove;
   const chatAbortControllers = new Map<string, ChatAbortControllerEntry>();
+  const chatPersistence = createChatPersistence(nodePath.join(CONFIG_DIR, "chat-messages.db"));
 
   return {
     canvasHost,
@@ -178,5 +183,6 @@ export async function createGatewayRuntimeState(params: {
     addChatRun,
     removeChatRun,
     chatAbortControllers,
+    chatPersistence,
   };
 }

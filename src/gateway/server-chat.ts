@@ -1,3 +1,4 @@
+import type { ChatPersistence } from "./chat-persistence.js";
 import { normalizeVerboseLevel } from "../auto-reply/thinking.js";
 import { loadConfig } from "../config/config.js";
 import { type AgentEventPayload, getAgentRunContext } from "../infra/agent-events.js";
@@ -133,6 +134,7 @@ export type AgentEventHandlerOptions = {
   nodeSendToSession: NodeSendToSession;
   agentRunSeq: Map<string, number>;
   chatRunState: ChatRunState;
+  chatPersistence?: ChatPersistence;
   resolveSessionKeyForRun: (runId: string) => string | undefined;
   clearAgentRunContext: (runId: string) => void;
 };
@@ -142,6 +144,7 @@ export function createAgentEventHandler({
   nodeSendToSession,
   agentRunSeq,
   chatRunState,
+  chatPersistence,
   resolveSessionKeyForRun,
   clearAgentRunContext,
 }: AgentEventHandlerOptions) {
@@ -182,11 +185,20 @@ export function createAgentEventHandler({
     chatRunState.buffers.delete(clientRunId);
     chatRunState.deltaSentAt.delete(clientRunId);
     if (jobState === "done") {
+      const persisted = chatPersistence?.persist({
+        sessionKey,
+        runId: clientRunId,
+        state: "final",
+        role: "assistant",
+        content: text || undefined,
+      });
       const payload = {
         runId: clientRunId,
         sessionKey,
         seq,
         state: "final" as const,
+        chatSeq: persisted?.seq,
+        serverTs: persisted?.serverTs,
         message: text
           ? {
               role: "assistant",
@@ -202,11 +214,19 @@ export function createAgentEventHandler({
       nodeSendToSession(sessionKey, "chat", payload);
       return;
     }
+    const errorPersisted = chatPersistence?.persist({
+      sessionKey,
+      runId: clientRunId,
+      state: "error",
+      errorMessage: error ? formatForLog(error) : undefined,
+    });
     const payload = {
       runId: clientRunId,
       sessionKey,
       seq,
       state: "error" as const,
+      chatSeq: errorPersisted?.seq,
+      serverTs: errorPersisted?.serverTs,
       errorMessage: error ? formatForLog(error) : undefined,
     };
     broadcast("chat", payload);

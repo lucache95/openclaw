@@ -23,6 +23,7 @@ export function createGatewayCloseHandler(params: {
   agentUnsub: (() => void) | null;
   heartbeatUnsub: (() => void) | null;
   chatRunState: { clear: () => void };
+  chatPersistence?: { close: () => void };
   clients: Set<{ socket: { close: (code: number, reason: string) => void } }>;
   configReloader: { stop: () => Promise<void> };
   browserControl: { stop: () => Promise<void> } | null;
@@ -96,6 +97,13 @@ export function createGatewayCloseHandler(params: {
       }
     }
     params.chatRunState.clear();
+    if (params.chatPersistence) {
+      try {
+        params.chatPersistence.close();
+      } catch {
+        /* ignore */
+      }
+    }
     for (const c of params.clients) {
       try {
         c.socket.close(1012, "service restart");
