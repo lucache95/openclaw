@@ -322,7 +322,7 @@ Phases execute in numeric order: 8 -> 8.1 -> 8.2 -> 9 -> 9.1 -> 10 -> etc.
 | 25. Event Wiring        | v2.3      | 0/TBD          | Not started | -          |
 | 26. Agents Tab & Cards  | v2.3      | 1/1            | Complete    | -          |
 | 27. Conversation View   | v2.3      | 0/2            | Planned     | -          |
-| 27.1 A2A Conversation   | v2.3      | 0/TBD          | Not started | -          |
+| 27.1 A2A Conversation   | v2.3      | 3/3            | Complete    | 2026-02-03 |
 
 ---
 
@@ -333,3 +333,4 @@ _v2.2 phase 19 planned: 2026-02-02_
 _v2.3 phases 25-27 planned: 2026-02-03_
 _Phase 26 planned: 2026-02-03_
 _Phase 27 planned: 2026-02-03_
+_Phase 27.1 complete: 2026-02-03_
