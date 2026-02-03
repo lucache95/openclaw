@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import type { GatewayMessageChannel } from "../../utils/message-channel.js";
 import { callGateway } from "../../gateway/call.js";
+import { emitAgentEvent } from "../../infra/agent-events.js";
 import { formatErrorMessage } from "../../infra/errors.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
+import { resolveAgentIdFromSessionKey } from "../../routing/session-key.js";
 import { AGENT_LANE_NESTED } from "../lanes.js";
 import { readLatestAssistantReply, runAgentStep } from "./agent-step.js";
 import { resolveAnnounceTarget } from "./sessions-announce-target.js";
@@ -28,6 +30,12 @@ export async function runSessionsSendA2AFlow(params: {
 }) {
   const runContextId = params.waitRunId ?? "unknown";
   try {
+    const conversationId = crypto.randomUUID();
+    const requesterAgentId = params.requesterSessionKey
+      ? resolveAgentIdFromSessionKey(params.requesterSessionKey)
+      : "unknown";
+    const targetAgentId = resolveAgentIdFromSessionKey(params.targetSessionKey);
+
     let primaryReply = params.roundOneReply;
     let latestReply = params.roundOneReply;
     if (!primaryReply && params.waitRunId) {
@@ -49,6 +57,38 @@ export async function runSessionsSendA2AFlow(params: {
     }
     if (!latestReply) {
       return;
+    }
+
+    // Emit turn 0: requester's initial message
+    emitAgentEvent({
+      runId: runContextId,
+      stream: "a2a",
+      data: {
+        conversationId,
+        fromAgent: requesterAgentId,
+        toAgent: targetAgentId,
+        turn: 0,
+        maxTurns: params.maxPingPongTurns,
+        text: params.message,
+        phase: "turn",
+      },
+    });
+
+    // Emit turn 1: target's round-one reply
+    if (primaryReply) {
+      emitAgentEvent({
+        runId: runContextId,
+        stream: "a2a",
+        data: {
+          conversationId,
+          fromAgent: targetAgentId,
+          toAgent: requesterAgentId,
+          turn: 1,
+          maxTurns: params.maxPingPongTurns,
+          text: primaryReply,
+          phase: "turn",
+        },
+      });
     }
 
     const announceTarget = await resolveAnnounceTarget({
@@ -77,12 +117,22 @@ export async function runSessionsSendA2AFlow(params: {
           turn,
           maxTurns: params.maxPingPongTurns,
         });
+        const currentAgentId =
+          currentSessionKey === params.requesterSessionKey ? requesterAgentId : targetAgentId;
+        const otherAgentId = currentAgentId === requesterAgentId ? targetAgentId : requesterAgentId;
         const replyText = await runAgentStep({
           sessionKey: currentSessionKey,
           message: incomingMessage,
           extraSystemPrompt: replyPrompt,
           timeoutMs: params.announceTimeoutMs,
           lane: AGENT_LANE_NESTED,
+          a2aContext: {
+            conversationId,
+            fromAgent: currentAgentId,
+            toAgent: otherAgentId,
+            turn: turn + 1,
+            maxTurns: params.maxPingPongTurns,
+          },
         });
         if (!replyText || isReplySkip(replyText)) {
           break;
@@ -94,6 +144,17 @@ export async function runSessionsSendA2AFlow(params: {
         nextSessionKey = swap;
       }
     }
+
+    emitAgentEvent({
+      runId: runContextId,
+      stream: "a2a",
+      data: {
+        conversationId,
+        fromAgent: requesterAgentId,
+        toAgent: targetAgentId,
+        phase: "complete",
+      },
+    });
 
     const announcePrompt = buildAgentToAgentAnnounceContext({
       requesterSessionKey: params.requesterSessionKey,
