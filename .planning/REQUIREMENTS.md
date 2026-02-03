@@ -1,4 +1,4 @@
-# Requirements: OpenClaw v2.0 Multi-Agent Infrastructure
+# Requirements: OpenClaw Optimization
 
 **Defined:** 2026-02-02
 **Core Value:** Context must survive -- build coordination layer for reliable multi-agent fleet
@@ -44,6 +44,37 @@ Requirements for multi-agent infrastructure. Each maps to roadmap phases.
 - [ ] **TMPL-06**: SOUL.md created for Designer agent (UI mockups, visual assets)
 - [ ] **TMPL-07**: Session configs added to openclaw.json for all 6 agents
 
+## v2.3 Requirements
+
+Requirements for the Live Agent Dashboard. Wires v2.2 components to live gateway events.
+
+### Event Wiring
+
+- [ ] **WIRE-01**: Route gateway "agent" WebSocket events to updateSessionFromEvent mutator via AgentsController
+- [ ] **WIRE-02**: Create AgentsController class that bridges gateway events to metrics signals
+- [ ] **WIRE-03**: Wire AgentsController into app.ts state and app-gateway.ts event routing
+
+### Agents Tab
+
+- [ ] **TAB-01**: Register "agents" tab in navigation.ts (Tab type, TAB_GROUPS Agent group, path, icon, title, subtitle)
+- [ ] **TAB-02**: Create renderAgents view function in views/agents.ts consuming live signal data
+- [ ] **TAB-03**: Wire renderAgents into app-render.ts tab switch statement
+
+### Live Session Cards
+
+- [ ] **LIVE-01**: Session cards render from agentSessions signal with real-time status updates (thinking/executing/complete/error)
+- [ ] **LIVE-02**: Agent identity markers (name, color) display on each session card from live events
+- [ ] **LIVE-03**: Empty state and disconnected state shown when no sessions or gateway offline
+
+### Agent Conversation View
+
+- [ ] **CHAT-01**: Live message stream showing agent-to-agent conversations with token-by-token streaming
+- [ ] **CHAT-02**: Agent message bubbles with identity markers (avatar, name, color) distinguishing each agent
+- [ ] **CHAT-03**: Typing/activity indicators showing which agent is currently generating
+- [ ] **CHAT-04**: Auto-scroll to newest messages with scroll-up pause override
+- [ ] **CHAT-05**: Markdown and code block rendering in agent messages
+- [ ] **CHAT-06**: Agent status indicators (idle/thinking/executing/waiting) in conversation view
+
 ## Future Requirements (v2.1+)
 
 Deferred to agent deployment milestone.
@@ -66,46 +97,66 @@ Deferred to agent deployment milestone.
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Mission Control UI | After core coordination working (v2.1+) |
+| Feature                    | Reason                                      |
+| -------------------------- | ------------------------------------------- |
+| Mission Control UI         | After core coordination working (v2.1+)     |
 | Multiple gateway instances | Single gateway sufficient for current scale |
-| Agent deployment | v2.1 after infrastructure stable |
-| New channel integrations | Focus on fleet, not expansion |
-| Xcode app fix | Separate project |
+| Agent deployment           | v2.1 after infrastructure stable            |
+| New channel integrations   | Focus on fleet, not expansion               |
+| Xcode app fix              | Separate project                            |
+| Cost analytics / export    | Deferred from v2.3 (not core dashboard)     |
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| INFRA-01 | Phase 8 | Pending |
-| INFRA-02 | Phase 8 | Pending |
-| INFRA-03 | Phase 8 | Pending |
-| HEART-01 | Phase 9 | Pending |
-| HEART-02 | Phase 9 | Pending |
-| HEART-03 | Phase 9 | Pending |
-| HEART-04 | Phase 9 | Pending |
-| NOTIF-01 | Phase 10 | Pending |
-| NOTIF-02 | Phase 10 | Pending |
-| NOTIF-03 | Phase 10 | Pending |
-| NOTIF-04 | Phase 10 | Pending |
-| COORD-01 | Phase 11 | Pending |
-| COORD-02 | Phase 11 | Pending |
-| COORD-03 | Phase 11 | Pending |
-| COORD-04 | Phase 11 | Pending |
-| TMPL-01 | Phase 12 | Pending |
-| TMPL-02 | Phase 12 | Pending |
-| TMPL-03 | Phase 12 | Pending |
-| TMPL-04 | Phase 12 | Pending |
-| TMPL-05 | Phase 12 | Pending |
-| TMPL-06 | Phase 12 | Pending |
-| TMPL-07 | Phase 12 | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| INFRA-01    | Phase 8  | Pending |
+| INFRA-02    | Phase 8  | Pending |
+| INFRA-03    | Phase 8  | Pending |
+| HEART-01    | Phase 9  | Pending |
+| HEART-02    | Phase 9  | Pending |
+| HEART-03    | Phase 9  | Pending |
+| HEART-04    | Phase 9  | Pending |
+| NOTIF-01    | Phase 10 | Pending |
+| NOTIF-02    | Phase 10 | Pending |
+| NOTIF-03    | Phase 10 | Pending |
+| NOTIF-04    | Phase 10 | Pending |
+| COORD-01    | Phase 11 | Pending |
+| COORD-02    | Phase 11 | Pending |
+| COORD-03    | Phase 11 | Pending |
+| COORD-04    | Phase 11 | Pending |
+| TMPL-01     | Phase 12 | Pending |
+| TMPL-02     | Phase 12 | Pending |
+| TMPL-03     | Phase 12 | Pending |
+| TMPL-04     | Phase 12 | Pending |
+| TMPL-05     | Phase 12 | Pending |
+| TMPL-06     | Phase 12 | Pending |
+| TMPL-07     | Phase 12 | Pending |
+| WIRE-01     | Phase 25 | Pending |
+| WIRE-02     | Phase 25 | Pending |
+| WIRE-03     | Phase 25 | Pending |
+| TAB-01      | Phase 26 | Pending |
+| TAB-02      | Phase 26 | Pending |
+| TAB-03      | Phase 26 | Pending |
+| LIVE-01     | Phase 26 | Pending |
+| LIVE-02     | Phase 26 | Pending |
+| LIVE-03     | Phase 26 | Pending |
+| CHAT-01     | Phase 27 | Pending |
+| CHAT-02     | Phase 27 | Pending |
+| CHAT-03     | Phase 27 | Pending |
+| CHAT-04     | Phase 27 | Pending |
+| CHAT-05     | Phase 27 | Pending |
+| CHAT-06     | Phase 27 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 22 total
-- Mapped to phases: 22
+
+- v2.0 requirements: 22 mapped / 22 total
+- v2.3 requirements: 15 mapped / 15 total
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-02-02*
-*Traceability updated: 2026-02-02 after roadmap creation*
+
+_Requirements defined: 2026-02-02_
+_Traceability updated: 2026-02-02 after roadmap creation_
+_v2.3 requirements added: 2026-02-03_
+_v2.3 traceability updated: 2026-02-03_

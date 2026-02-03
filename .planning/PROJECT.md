@@ -15,6 +15,7 @@ Optimizing Lucas's existing OpenClaw (formerly Moltbot) setup. v1.0 solved the c
 **Tech stack:** OpenClaw fork, Ollama qwen2.5:3b, MiniMax M2, macOS Keychain, GPG vault
 
 **Infrastructure:**
+
 - Mac mini running OpenClaw gateway on port 18789
 - Claude Max subscription (no API billing for primary use)
 - Telegram bot for messaging
@@ -23,23 +24,21 @@ Optimizing Lucas's existing OpenClaw (formerly Moltbot) setup. v1.0 solved the c
 - Three-tier routing: local → cheap → quality
 - Secure credential storage via Keychain and GPG vault
 
-## Current Milestone: v2.0 Multi-Agent Infrastructure
+## Current Milestone: v2.3 Live Agent Dashboard
 
-**Goal:** Complete infrastructure gaps and build coordination layer for multi-agent fleet deployment.
+**Goal:** Wire v2.2 visualization components to real gateway WebSocket events so users can watch agents work in real-time from an "Agents" tab in the dashboard.
 
 **Target features:**
-- Encrypted backup scripts with GPG
-- phi4 reasoning model for complex local tasks
-- Complete GPG credential migration
-- Staggered heartbeat system for fleet coordination
-- Notification daemon for @mentions between agents
-- Daily standup cron (summary to Telegram)
-- Agent SOUL templates for: Coder, Researcher, Writer, QA/Tester, DevOps, Designer
-- Session configs ready for fleet deployment
 
-**Architecture decision:** Single gateway, multiple sessions (per Bhanu's guide)
+- New "Agents" tab in dashboard sidebar
+- Live message stream showing agent-to-agent conversations as they happen
+- Real-time session cards showing spawned agents, their status, and elapsed time
+- WebSocket event subscription connecting UI signals to gateway agent events
+- Agent handoff animations triggered by real spawn events
 
-**NOT in v2.0:** Actually deploying 6 new agents (that's v2.1+)
+**Builds on:** v2.2 components (session-card, latency-badge, error-card, cost-display, conversation-export, agent-handoff, metrics signals, agent-chat view/controller)
+
+**NOT in v2.3:** Cost/latency/export wiring (components exist, data connection deferred)
 
 ## Requirements
 
@@ -72,17 +71,20 @@ Optimizing Lucas's existing OpenClaw (formerly Moltbot) setup. v1.0 solved the c
 (v2.0 Multi-Agent Infrastructure)
 
 **Infrastructure Completion:**
+
 - INFRA-01: Pull phi4 reasoning model for complex local tasks
 - INFRA-02: Create encrypted backup scripts (GPG)
 - INFRA-03: Complete credential migration to GPG vault
 
 **Multi-Agent Coordination:**
+
 - COORD-01: Implement staggered heartbeat crons for fleet
 - COORD-02: Build notification daemon for @mentions
 - COORD-03: Create daily standup cron (summary to Telegram)
 - COORD-04: Enhance Mission Control with thread subscriptions
 
 **Fleet Preparation:**
+
 - FLEET-01: Create SOUL templates for 6 agent roles
 - FLEET-02: Configure agent sessions in OpenClaw config
 - FLEET-03: Document fleet deployment protocol
@@ -103,22 +105,23 @@ Optimizing Lucas's existing OpenClaw (formerly Moltbot) setup. v1.0 solved the c
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Use Ollama qwen2.5:3b as primary local model | Fast, small (1.9GB), good for simple tasks | Good |
-| ACTIVE.md for hot context recovery | Glenn's recommended pattern for surviving compaction | Good |
-| Keep existing cron jobs as-is | They work; don't fix what isn't broken | Good |
-| Fork as lucache95/openclaw | Consistent naming with GitHub username | Good |
-| Build via pnpm | Consistent with upstream OpenClaw | Good |
-| Weekly sync checks on Mondays | Catch upstream changes early | Good |
-| 70/80/90% thresholds | Progressive warnings before overflow | Good |
-| Use Keychain for script access | Avoids GPG passphrase prompts in automation | Good |
-| MiniMax temperature clamp (0.01-1.0] | MiniMax API rejects 0 | Good |
-| Pattern-based task classification | Better than keyword matching | Good |
-| Three-tier routing enabled by default | Immediate cost savings | Revisit |
-| Single gateway for fleet | Simpler coordination, shared workspace, Bhanu's pattern | — Pending |
-| Infra first, agents later | Build coordination layer before deploying 6 agents | — Pending |
-| 6 agent roles planned | Coder, Researcher, Writer, QA/Tester, DevOps, Designer | — Pending |
+| Decision                                     | Rationale                                               | Outcome   |
+| -------------------------------------------- | ------------------------------------------------------- | --------- |
+| Use Ollama qwen2.5:3b as primary local model | Fast, small (1.9GB), good for simple tasks              | Good      |
+| ACTIVE.md for hot context recovery           | Glenn's recommended pattern for surviving compaction    | Good      |
+| Keep existing cron jobs as-is                | They work; don't fix what isn't broken                  | Good      |
+| Fork as lucache95/openclaw                   | Consistent naming with GitHub username                  | Good      |
+| Build via pnpm                               | Consistent with upstream OpenClaw                       | Good      |
+| Weekly sync checks on Mondays                | Catch upstream changes early                            | Good      |
+| 70/80/90% thresholds                         | Progressive warnings before overflow                    | Good      |
+| Use Keychain for script access               | Avoids GPG passphrase prompts in automation             | Good      |
+| MiniMax temperature clamp (0.01-1.0]         | MiniMax API rejects 0                                   | Good      |
+| Pattern-based task classification            | Better than keyword matching                            | Good      |
+| Three-tier routing enabled by default        | Immediate cost savings                                  | Revisit   |
+| Single gateway for fleet                     | Simpler coordination, shared workspace, Bhanu's pattern | — Pending |
+| Infra first, agents later                    | Build coordination layer before deploying 6 agents      | — Pending |
+| 6 agent roles planned                        | Coder, Researcher, Writer, QA/Tester, DevOps, Designer  | — Pending |
 
 ---
-*Last updated: 2026-02-02 after v2.0 milestone start*
+
+_Last updated: 2026-02-03 after v2.3 milestone start_

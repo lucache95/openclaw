@@ -296,11 +296,13 @@ Plans:
 2. The UI merges events from both sessions into a unified conversation thread showing "Ethos asked: X" → "GSD replied: Y" back-and-forth
 3. Clicking a session card that has A2A conversation data shows the threaded conversation view with both agents' messages interleaved
 4. GSD's questioning phase (clarifying questions to Ethos) is visible as a real conversation in the Agents tab
-   **Plans**: TBD
+   **Plans**: 3 plans
 
 Plans:
 
-- [ ] 27.1-01: TBD
+- [ ] 27.1-01-PLAN.md -- Backend A2A event emission (conversationId, turn events, REPLY_SKIP filtering)
+- [ ] 27.1-02-PLAN.md -- UI state layer (a2aConversations signal, mutators, AgentsController routing)
+- [ ] 27.1-03-PLAN.md -- UI rendering (threaded conversation view, session card A2A indicators)
 
 ## Progress
 

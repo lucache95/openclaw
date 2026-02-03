@@ -50,13 +50,13 @@ function loadAgentIdentity(): string | undefined {
  * Feature flag to enable/disable local routing
  * Can be overridden via config in future
  */
-export let LOCAL_ROUTING_ENABLED = false;
+export let LOCAL_ROUTING_ENABLED = true;
 
 /**
  * Debug flag for local routing
  * Can be overridden via config in future
  */
-export let LOCAL_ROUTING_DEBUG = false;
+export let LOCAL_ROUTING_DEBUG = true;
 
 /**
  * Feature flag to enable three-tier routing (local/cheap/quality)

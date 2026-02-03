@@ -5,32 +5,35 @@
 See: .planning/PROJECT.md (updated 2026-02-03)
 
 **Core value:** Ship working product -- when an agent reports "done", it must be verifiably working
-**Current focus:** v2.3 Live Agent Dashboard - Phase 27 (Conversation View)
+**Current focus:** v2.3 Live Agent Dashboard - Phase 27.1 (A2A Conversation Visibility)
 
 ## Current Position
 
-Phase: 27 of 27 (Conversation View)
-Plan: 01 of 02 complete
-Status: In progress
-Last activity: 2026-02-03 -- Completed 27-01-PLAN.md (conversation data layer)
+Phase: 27.1 (A2A Conversation Visibility) -- INSERTED
+Plan: Not planned yet
+Status: Inserted phase -- needs planning
+Last activity: 2026-02-03 -- Phase 27.1 inserted for A2A conversation visibility gap
 
-Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2) | [################----] 83% (v2.3)
+Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2) | [####################] 100% (v2.3)
 
 ## Performance Metrics
 
 **Velocity (v1.0):**
+
 - Total plans completed: 21
 - Average duration: 6.4 min
 - Total execution time: ~2.35 hours
 
 **Velocity (v2.2):**
+
 - Total plans completed: 43
 - Phases: 18-24 (7 phases)
 - Executed autonomously with parallel agents
 
 **Velocity (v2.3):**
-- Plans completed: 2 (phase 26 + 27-01)
-- Duration: 9 min total
+
+- Plans completed: 3 (phase 26 + 27-01 + 27-02)
+- Duration: 11 min total
 
 ## Accumulated Context
 
@@ -39,6 +42,7 @@ Progress: [####################] 100% (v1.0) | [####################] 100% (v2.2
 All v1.0 decisions logged in PROJECT.md Key Decisions table.
 
 v2.3 decisions:
+
 - New "Agents" tab in dashboard (not replacing existing Chat)
 - Core scope only: live message stream + session cards (cost/export deferred)
 - Builds on existing v2.2 Lit components and signals infrastructure
@@ -50,10 +54,17 @@ v2.3 decisions:
 - [27-01] ConversationMessage role union: assistant | system | tool
 - [27-01] 500-message cap per session via slice(-500)
 - [27-01] assistant stream data.text is full accumulated text (replaced, not delta-appended)
+- [27-02] Auto-scroll with module-level userScrolledUp flag (no signal overhead for ephemeral state)
+- [27-02] streamText property on message-stream with nullish coalescing fallback for backward compatibility
+- [27-02] Clickable div wrapper on session cards for drill-down (separation of concerns)
 
 ### Pending Todos
 
 None.
+
+### Roadmap Evolution
+
+- Phase 27.1 inserted after Phase 27: A2A Conversation Visibility (URGENT) — inter-agent conversations via sessions_send ping-pong are invisible in UI; gateway emits per-session events but no conversation metadata linking them
 
 ### Blockers/Concerns
 
@@ -64,15 +75,18 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-03T21:53:45Z
-Milestone: v2.3 Live Agent Dashboard
-Stopped at: Completed 27-01-PLAN.md
+Last session: 2026-02-03T21:57:24Z
+Milestone: v2.3 Live Agent Dashboard (complete)
+Stopped at: Completed 27-02-PLAN.md -- v2.3 milestone complete
 Resume file: None
 
 ---
-*State initialized: 2026-02-01*
-*v1.0 milestone complete: 2026-02-02*
-*v2.2 milestone complete: 2026-02-03*
-*v2.3 roadmap created: 2026-02-03*
-*Phase 26 plan 01 complete: 2026-02-03*
-*Phase 27 plan 01 complete: 2026-02-03*
+
+_State initialized: 2026-02-01_
+_v1.0 milestone complete: 2026-02-02_
+_v2.2 milestone complete: 2026-02-03_
+_v2.3 roadmap created: 2026-02-03_
+_Phase 26 plan 01 complete: 2026-02-03_
+_Phase 27 plan 01 complete: 2026-02-03_
+_Phase 27 plan 02 complete: 2026-02-03_
+_v2.3 milestone complete: 2026-02-03_
