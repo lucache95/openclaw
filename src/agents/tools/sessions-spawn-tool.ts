@@ -5,6 +5,7 @@ import type { AnyAgentTool } from "./common.js";
 import { formatThinkingLevels, normalizeThinkLevel } from "../../auto-reply/thinking.js";
 import { loadConfig } from "../../config/config.js";
 import { callGateway } from "../../gateway/call.js";
+import { registerAgentRunContext } from "../../infra/agent-events.js";
 import {
   isSubagentSessionKey,
   normalizeAgentId,
@@ -263,6 +264,12 @@ export function createSessionsSpawnTool(opts?: {
         cleanup,
         label: label || undefined,
         runTimeoutSeconds,
+      });
+
+      // Register parent context so lifecycle events can be correlated
+      registerAgentRunContext(childRunId, {
+        sessionKey: childSessionKey,
+        spawnedBy: spawnedByKey,
       });
 
       return jsonResult({
