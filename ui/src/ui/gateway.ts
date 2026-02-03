@@ -57,6 +57,8 @@ export type GatewayBrowserClientOptions = {
   onEvent?: (evt: GatewayEventFrame) => void;
   onClose?: (info: { code: number; reason: string }) => void;
   onGap?: (info: { expected: number; received: number }) => void;
+  activeSessionKey?: string;
+  onReplayComplete?: (info: { messagesReplayed: number; resumeSeq: number }) => void;
 };
 
 // 4008 = application-defined code (browser rejects 1008 "Policy Violation")
@@ -67,12 +69,16 @@ export class GatewayBrowserClient {
   private pending = new Map<string, Pending>();
   private closed = false;
   private lastSeq: number | null = null;
+  private lastChatSeq: number | null = null;
+  private activeSessionKey: string | null = null;
   private connectNonce: string | null = null;
   private connectSent = false;
   private connectTimer: number | null = null;
   private backoffMs = 800;
 
-  constructor(private opts: GatewayBrowserClientOptions) {}
+  constructor(private opts: GatewayBrowserClientOptions) {
+    this.activeSessionKey = opts.activeSessionKey ?? null;
+  }
 
   start() {
     this.closed = false;
@@ -88,6 +94,10 @@ export class GatewayBrowserClient {
 
   get connected() {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  setActiveSession(sessionKey: string) {
+    this.activeSessionKey = sessionKey;
   }
 
   private connect() {
@@ -218,6 +228,34 @@ export class GatewayBrowserClient {
         }
         this.backoffMs = 800;
         this.opts.onHello?.(hello);
+        // Replay missed chat messages after reconnection
+        if (this.lastChatSeq !== null && this.activeSessionKey) {
+          void this.request("chat.replay", {
+            sessionKey: this.activeSessionKey,
+            lastSeq: this.lastChatSeq,
+          }).then((result: unknown) => {
+            const r = result as { messages: Array<{ seq: number }>; resumeSeq: number } | undefined;
+            if (r?.messages) {
+              for (const msg of r.messages) {
+                this.opts.onEvent?.({
+                  type: "event",
+                  event: "chat",
+                  payload: msg,
+                  seq: undefined,
+                });
+              }
+              if (typeof r.resumeSeq === "number") {
+                this.lastChatSeq = r.resumeSeq;
+              }
+              this.opts.onReplayComplete?.({
+                messagesReplayed: r.messages.length,
+                resumeSeq: r.resumeSeq,
+              });
+            }
+          }).catch(() => {
+            // Replay failure is non-fatal
+          });
+        }
       })
       .catch(() => {
         if (canFallbackToShared && deviceIdentity) {
@@ -253,6 +291,12 @@ export class GatewayBrowserClient {
           this.opts.onGap?.({ expected: this.lastSeq + 1, received: seq });
         }
         this.lastSeq = seq;
+      }
+      if (evt.event === "chat") {
+        const chatPayload = evt.payload as { chatSeq?: number } | undefined;
+        if (chatPayload && typeof chatPayload.chatSeq === "number") {
+          this.lastChatSeq = chatPayload.chatSeq;
+        }
       }
       try {
         this.opts.onEvent?.(evt);
