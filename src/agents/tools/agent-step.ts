@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import { callGateway } from "../../gateway/call.js";
+import { emitAgentEvent } from "../../infra/agent-events.js";
 import { INTERNAL_MESSAGE_CHANNEL } from "../../utils/message-channel.js";
 import { AGENT_LANE_NESTED } from "../lanes.js";
 import { extractAssistantText, stripToolMessages } from "./sessions-helpers.js";
+import { isReplySkip } from "./sessions-send-helpers.js";
 
 export async function readLatestAssistantReply(params: {
   sessionKey: string;
@@ -24,6 +26,13 @@ export async function runAgentStep(params: {
   timeoutMs: number;
   channel?: string;
   lane?: string;
+  a2aContext?: {
+    conversationId: string;
+    fromAgent: string;
+    toAgent: string;
+    turn: number;
+    maxTurns: number;
+  };
 }): Promise<string | undefined> {
   const stepIdem = crypto.randomUUID();
   const response = await callGateway<{ runId?: string }>({
@@ -54,5 +63,23 @@ export async function runAgentStep(params: {
   if (wait?.status !== "ok") {
     return undefined;
   }
-  return await readLatestAssistantReply({ sessionKey: params.sessionKey });
+  const replyText = await readLatestAssistantReply({ sessionKey: params.sessionKey });
+
+  if (params.a2aContext && replyText && !isReplySkip(replyText)) {
+    emitAgentEvent({
+      runId: resolvedRunId,
+      stream: "a2a",
+      data: {
+        conversationId: params.a2aContext.conversationId,
+        fromAgent: params.a2aContext.fromAgent,
+        toAgent: params.a2aContext.toAgent,
+        turn: params.a2aContext.turn,
+        maxTurns: params.a2aContext.maxTurns,
+        text: replyText,
+        phase: "turn",
+      },
+    });
+  }
+
+  return replyText;
 }
