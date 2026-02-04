@@ -1,6 +1,6 @@
-import { LitElement, html, css, nothing } from "lit";
-import { customElement } from "lit/decorators.js";
 import { SignalWatcher } from "@lit-labs/signals";
+import { LitElement, html, css, nothing } from "lit";
+import { customElement, property } from "lit/decorators.js";
 import { sessionList, activeSessionKey, type SessionEntry } from "../state/sessions";
 
 function formatRelativeTime(ms: number): string {
@@ -29,6 +29,7 @@ const MAX_LABEL_LENGTH = 30;
 
 @customElement("session-list")
 export class SessionListElement extends SignalWatcher(LitElement) {
+  @property() loadingSessionKey = "";
   static styles = css`
     :host {
       display: flex;
@@ -66,14 +67,44 @@ export class SessionListElement extends SignalWatcher(LitElement) {
       padding: 10px 16px;
       cursor: pointer;
       border-left: 3px solid transparent;
-      transition: background 0.15s;
+      transition:
+        background 0.15s,
+        transform 0.1s ease;
     }
     .session-item:hover {
       background: rgba(255, 255, 255, 0.03);
     }
+    .session-item:active {
+      background: rgba(255, 255, 255, 0.06);
+      transform: scale(0.98);
+    }
     .session-item.active {
       background: rgba(59, 130, 246, 0.1);
       border-left-color: #3b82f6;
+    }
+    .session-item.loading {
+      background: rgba(255, 165, 0, 0.1);
+      border-left-color: #ffa500;
+      position: relative;
+      overflow: hidden;
+    }
+    .session-item.loading::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      animation: pulse-loading 1.5s infinite;
+    }
+    @keyframes pulse-loading {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
     }
     .session-label {
       font-size: 0.85rem;
@@ -113,6 +144,9 @@ export class SessionListElement extends SignalWatcher(LitElement) {
   `;
 
   private _handleClick(key: string) {
+    // Optimistic update: set loading state immediately
+    this.loadingSessionKey = key;
+
     this.dispatchEvent(
       new CustomEvent("session-select", {
         detail: { key },
@@ -120,6 +154,13 @@ export class SessionListElement extends SignalWatcher(LitElement) {
         composed: true,
       }),
     );
+
+    // Clear loading state after a delay (will be overridden when actual data loads)
+    setTimeout(() => {
+      if (this.loadingSessionKey === key) {
+        this.loadingSessionKey = "";
+      }
+    }, 2000);
   }
 
   render() {
@@ -136,15 +177,20 @@ export class SessionListElement extends SignalWatcher(LitElement) {
         <span class="session-count">${sessions.length}</span>
       </div>
       <div class="session-items">
-        ${sorted.length === 0
-          ? html`<div class="empty">No conversations</div>`
-          : sorted.map((s) => this._renderSession(s, activeKey))}
+        ${
+          sorted.length === 0
+            ? html`
+                <div class="empty">No conversations</div>
+              `
+            : sorted.map((s) => this._renderSession(s, activeKey))
+        }
       </div>
     `;
   }
 
   private _renderSession(session: SessionEntry, activeKey: string) {
     const isActive = session.key === activeKey;
+    const isLoading = session.key === this.loadingSessionKey;
     const label =
       session.label.length > MAX_LABEL_LENGTH
         ? session.label.slice(0, MAX_LABEL_LENGTH) + "..."
@@ -153,13 +199,20 @@ export class SessionListElement extends SignalWatcher(LitElement) {
 
     return html`
       <div
-        class="session-item ${isActive ? "active" : ""}"
+        class="session-item ${isActive ? "active" : ""} ${isLoading ? "loading" : ""}"
         @click=${() => this._handleClick(session.key)}
       >
         <span class="session-label">${label}</span>
         <div class="session-meta">
           <span class="session-kind ${session.kind}"></span>
           ${time ? html`<span>${time}</span>` : nothing}
+          ${
+            isLoading
+              ? html`
+                  <span style="color: #ffa500; font-size: 0.7rem">Loading...</span>
+                `
+              : nothing
+          }
         </div>
       </div>
     `;

@@ -61,8 +61,9 @@ export function renderAgentSessions() {
   }
 
   const sessions = Array.from(agentSessions.get().values());
+  const conversations = Array.from(a2aConversations.get().values());
 
-  if (sessions.length === 0) {
+  if (sessions.length === 0 && conversations.length === 0) {
     return html`
       <section class="card">
         <div class="card-title">Agent Sessions</div>
@@ -126,6 +127,85 @@ export function renderAgentSessions() {
         )}
       </div>
     </section>
+    ${
+      conversations.length > 0
+        ? html`
+          <section class="card" style="margin-top:16px;">
+            <div class="card-title">A2A Conversations</div>
+            <div class="card-sub">
+              ${conversations.length} conversation${conversations.length !== 1 ? "s" : ""} between
+              agents.
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+              ${conversations
+                .sort((a, b) => b.startedAt - a.startedAt)
+                .map(
+                  (conv) => html`
+                    <div
+                      @click=${() => selectedA2AConversation.set(conv.conversationId)}
+                      class="a2a-row"
+                      style="
+                        display:flex;
+                        align-items:center;
+                        gap:12px;
+                        padding:10px 14px;
+                        border-radius:8px;
+                        background:rgba(255,255,255,0.03);
+                        border:1px solid rgba(255,255,255,0.06);
+                        cursor:pointer;
+                        transition:background 0.15s, transform 0.1s ease;
+                      "
+                    >
+                      <div
+                        style="
+                          font-size:0.65rem;
+                          padding:2px 6px;
+                          border-radius:8px;
+                          background:${
+                            conv.status === "active"
+                              ? "rgba(234,179,8,0.15)"
+                              : "rgba(34,197,94,0.15)"
+                          };
+                          color:${conv.status === "active" ? "#eab308" : "#22c55e"};
+                          font-weight:600;
+                          white-space:nowrap;
+                        "
+                      >
+                        ${conv.status === "active" ? "LIVE" : "DONE"}
+                      </div>
+                      <div style="flex:1;min-width:0;">
+                        <div
+                          style="font-weight:500;font-size:0.85rem;color:rgba(255,255,255,0.9);"
+                        >
+                          ${conv.agents[0]} ↔ ${conv.agents[1]}
+                        </div>
+                        <div
+                          style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-top:2px;"
+                        >
+                          ${conv.turns.length} turn${conv.turns.length !== 1 ? "s" : ""} ·
+                          ${formatAgo(conv.startedAt)}
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          font-size:0.65rem;
+                          padding:2px 6px;
+                          border-radius:8px;
+                          background:rgba(59,130,246,0.15);
+                          color:#3b82f6;
+                          font-weight:600;
+                        "
+                      >
+                        A2A
+                      </div>
+                    </div>
+                  `,
+                )}
+            </div>
+          </section>
+        `
+        : nothing
+    }
   `;
 }
 

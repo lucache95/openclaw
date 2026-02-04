@@ -35,7 +35,21 @@ export class AgentSessionCardElement extends LitElement {
       padding: 12px;
       border-left: 3px solid var(--agent-color, #3b82f6);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-      transition: background 0.3s ease;
+      cursor: pointer;
+      transition:
+        background 0.2s ease,
+        transform 0.1s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      background: var(--bg-secondary-hover, #252538);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .card:active {
+      transform: scale(0.97);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 
     .card[data-status="error"] {
@@ -184,9 +198,7 @@ export class AgentSessionCardElement extends LitElement {
             .name=${this.agentId}
             .color=${agentColor}
             size="sm"
-            .status=${this.status === "thinking" || this.status === "executing"
-              ? this.status
-              : ""}
+            .status=${this.status === "thinking" || this.status === "executing" ? this.status : ""}
           ></agent-avatar>
           <span class="agent-name">${this.agentId}</span>
           <latency-badge .durationMs=${elapsed}></latency-badge>
@@ -195,9 +207,13 @@ export class AgentSessionCardElement extends LitElement {
         ${this.task ? html`<div class="body">${this.task}</div>` : nothing}
 
         <div class="footer">
-          ${this.currentStep
-            ? html`<span class="current-step">${this.currentStep}</span>`
-            : html`<span></span>`}
+          ${
+            this.currentStep
+              ? html`<span class="current-step">${this.currentStep}</span>`
+              : html`
+                  <span></span>
+                `
+          }
           <span
             class="status-badge ${this.status}"
             style="background: ${statusColor}20; color: ${statusColor}"

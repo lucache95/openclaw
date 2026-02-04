@@ -384,6 +384,60 @@
   border-color: rgba(16, 24, 40, 0.15);
 }
 
+/* A2A conversation row click feedback */
+.a2a-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.a2a-row:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Scoped click feedback for navigation/back buttons in chat views */
+.agent-chat button:active,
+.conversation-messages-container ~ button:active,
+.a2a-messages-container ~ button:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* Clickable elements - consistent feedback */
+.clickable-item,
+.list-item[role="button"],
+.agent-row,
+.session-item {
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.clickable-item:hover,
+.list-item[role="button"]:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.clickable-item:active,
+.list-item[role="button"]:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Card hover improvements */
+.card[role="button"]:hover,
+.card.clickable:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.card[role="button"]:active,
+.card.clickable:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
 @media (max-width: 640px) {
   .chat-session {
     min-width: 140px;
